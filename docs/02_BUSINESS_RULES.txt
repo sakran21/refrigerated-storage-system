@@ -1,0 +1,971 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: Business Rules
+VERSION: 0.5.0
+STATUS: Locked Business Logic Draft
+
+==================================================
+1. ROLE RULES
+==================================================
+
+BR-001
+The system has exactly three roles in v1:
+- Operator
+- Admin
+- Dev
+
+BR-002
+Operator performs daily business operations.
+
+BR-003
+Admin performs business oversight, privileged corrections, review flag handling, system setting control, and administrative correction workflows.
+
+BR-004
+Dev performs technical maintenance, deployment, debugging, production support, emergency repair, and technical system access.
+
+BR-005
+Dev has full technical access to the application, database, hosting environment, deployment pipeline, and production debugging tools as needed.
+
+BR-006
+Dev must not act as the normal daily business operator except for testing, debugging, repair, emergency support, or production maintenance.
+
+BR-007
+Accounts are role-based access accounts, not employee profiles.
+
+BR-008
+The system must not include employee profile fields, department fields, contact fields, or complex permission tables in v1.
+
+==================================================
+2. CUSTOMER RULES
+==================================================
+
+BR-009
+A customer record cannot be created without:
+- Full name
+- Phone number
+- ID type
+- ID number
+- Emergency contact name
+- Emergency contact phone
+
+BR-010
+Operator must review customer details before final submission.
+
+BR-011
+Before customer creation is finalized, the system must show a confirmation screen.
+
+BR-012
+After customer creation, the customer record is locked.
+
+BR-013
+Operator cannot edit:
+- Full name
+- Phone number
+- ID type
+- ID number
+- Emergency contact name
+- Emergency contact phone
+
+BR-014
+Operator can add notes to customer records through the generic notes system.
+
+BR-015
+Operator cannot edit existing notes.
+
+BR-016
+Operator cannot delete existing notes.
+
+BR-017
+Admin can edit customer fields through correction workflow.
+
+BR-018
+Customer records must remain available for historical reference.
+
+BR-019
+Customer records must not be hard-deleted after rental, payment, charge, meter reading, note, review flag, or audit activity exists.
+
+BR-020
+Notes provide human context only.
+
+BR-021
+Notes must not be the only mechanism for changing:
+- money
+- billing
+- payment state
+- rental state
+- delinquency
+- unit status
+- reporting logic
+
+==================================================
+3. NOTE RULES
+==================================================
+
+BR-022
+The system uses one generic notes system.
+
+BR-023
+Notes can attach to any major business record, including:
+- customer
+- unit
+- rental
+- billing period
+- charge
+- payment
+- deposit credit
+- meter reading
+- review flag
+- audit log
+- system setting
+- admin correction
+
+BR-024
+Notes are attached to individual records.
+
+BR-025
+Notes may be blank at initial record creation.
+
+BR-026
+Notes can be appended after record creation.
+
+BR-027
+Operator can add notes.
+
+BR-028
+Operator cannot edit notes after creation.
+
+BR-029
+Operator cannot delete notes after creation.
+
+BR-030
+Admin can hide or manage notes.
+
+BR-031
+Admin hiding a note must preserve note history.
+
+BR-032
+Notes are contextual records only.
+
+BR-033
+Notes must not replace structured system actions.
+
+BR-034
+If a business state changes, that change must be represented through the proper business record or workflow, not only by a note.
+
+BR-035
+List views must show notes as a normal column or compact notes summary where the listed record supports notes.
+
+BR-036
+Full note history must be visible from the individual record detail view.
+
+==================================================
+4. UNIT RULES
+==================================================
+
+BR-037
+Every unit must always have exactly one operational status:
+- Available
+- Rented
+- Maintenance
+
+BR-038
+A unit cannot be rented if its status is Rented.
+
+BR-039
+A unit cannot be rented if its status is Maintenance.
+
+BR-040
+A unit cannot have more than one active rental at the same time.
+
+BR-041
+A unit becomes Rented when a rental begins.
+
+BR-042
+A unit may return to Available only when:
+- the rental is closed
+- the unit is not in maintenance
+- the unit is not restricted by delinquency
+
+BR-043
+A delinquent unit remains unavailable unless:
+- the outstanding balance is fully resolved
+OR
+- Admin override is applied
+
+BR-044
+Unit maintenance status changes are sensitive actions.
+
+BR-045
+Unit maintenance status changes must create review flags according to system settings.
+
+BR-046
+Units must not be hard-deleted after rental, charge, payment, meter reading, note, review flag, or audit activity exists.
+
+==================================================
+5. RENTAL RULES
+==================================================
+
+BR-047
+A rental represents one unit rental lifecycle from start to closure.
+
+BR-048
+Each rental has one responsible customer.
+
+BR-049
+Multiple formal customers on one rental are out of scope for v1.
+
+BR-050
+If a customer rents multiple units, each unit receives its own rental record.
+
+BR-051
+A rental cannot be created unless the unit is Available.
+
+BR-052
+A rental cannot be created if the unit already has an active rental.
+
+BR-053
+Creating a rental requires:
+- responsible customer
+- unit
+- rental start date
+- rent amount
+- deposit amount, which may be zero
+- initial meter reading
+
+BR-054
+Rental start date becomes the billing anchor date.
+
+BR-055
+Rental status values:
+- Active
+- Closed
+
+BR-056
+Delinquency is separate from rental status.
+
+BR-057
+A rental can be Active and delinquent at the same time.
+
+BR-058
+A rental automatically renews until manually closed.
+
+BR-059
+Minimum rental charge is 30 days.
+
+BR-060
+A rental cannot close before the minimum rental duration is satisfied unless Admin override is applied.
+
+BR-061
+Closing a rental requires:
+- final meter reading
+- final charge calculation
+- final balance calculation
+
+BR-062
+Closed rentals must remain historical records.
+
+BR-063
+Closed rentals must not be reopened through normal Operator workflow.
+
+BR-064
+Reopening a closed rental requires Admin correction workflow.
+
+==================================================
+6. BILLING PERIOD RULES
+==================================================
+
+BR-065
+Each rental has its own billing periods.
+
+BR-066
+The first billing period starts on the rental start date.
+
+BR-067
+Each new billing period starts on the same calendar day of the next month where possible.
+
+BR-068
+If the same calendar day does not exist in the next month, the next billing period starts on the last calendar day of that month.
+
+BR-069
+Due date is the first day of the billing period.
+
+BR-070
+Grace period is seven calendar days.
+
+BR-071
+Day 8 after the due date counts as delinquency-eligible if outstanding balance remains.
+
+BR-072
+Billing period status values:
+- Open
+- Delinquent
+- Closed
+
+BR-073
+Rent charge generates automatically at the start of each billing period.
+
+BR-074
+Operator can trigger charge generation for eligible rentals and billing periods.
+
+BR-075
+Charge values generated through billing generation are calculated by the system.
+
+BR-076
+Operator cannot edit generated charge values.
+
+BR-077
+Generated charges are locked after creation.
+
+BR-078
+Billing periods continue until rental closure.
+
+BR-079
+Billing periods must not be hard-deleted after related charges, payments, meter readings, notes, review flags, or audit activity exists.
+
+==================================================
+7. CHARGE RULES
+==================================================
+
+BR-080
+Charges represent money owed.
+
+BR-081
+Charges are separate from payments.
+
+BR-082
+Allowed charge types:
+- Rent
+- Electricity
+- Adjustment
+
+BR-083
+Allowed charge status values:
+- Open
+- Voided_by_admin
+
+BR-084
+Rent charges are generated automatically.
+
+BR-085
+Electricity charges are generated from meter readings.
+
+BR-086
+Electricity charges use the global electricity rate stored in system settings.
+
+BR-087
+Electricity charges must store electricity_rate_snapshot.
+
+BR-088
+Charges are locked after creation or generation.
+
+BR-089
+Operator cannot edit charges after creation.
+
+BR-090
+Operator cannot delete charges after creation.
+
+BR-091
+Operator cannot override generated charge amounts.
+
+BR-092
+Charge override is Admin-only.
+
+BR-093
+Admin charge override is a sensitive action.
+
+BR-094
+Admin charge override must create:
+- audit log entry
+- admin correction record
+- review flag if financially sensitive
+- structured reason on the charge or admin correction record
+
+BR-095
+Charge voiding is Admin-only.
+
+BR-096
+Admin voiding must preserve the original charge record by changing the charge status to voided_by_admin.
+
+BR-097
+Charges must not be silently deleted.
+
+BR-098
+Adjustment charges are Admin-only in v1.
+
+BR-099
+Charge edit history lives in admin_corrections and audit_logs.
+
+==================================================
+8. PAYMENT RULES
+==================================================
+
+BR-100
+Payments are cash-only records in v1.
+
+BR-101
+The system records payments but does not process money.
+
+BR-102
+payment_method is out of scope for v1 because all payments are cash.
+
+BR-103
+Partial payments are allowed.
+
+BR-104
+Payments reduce the rental’s overall outstanding balance.
+
+BR-105
+Payment allocations are removed from v1.
+
+BR-106
+The system does not track exactly which payment paid which charge.
+
+BR-107
+Balance is calculated at rental level:
+
+total charges - total payments - applied deposit = outstanding balance
+
+BR-108
+Payments are final after creation.
+
+BR-109
+Operator cannot edit a payment after submission.
+
+BR-110
+Operator cannot delete a payment after submission.
+
+BR-111
+Operator cannot reverse a payment after submission.
+
+BR-112
+No payment reversal workflow exists in v1.
+
+BR-113
+Payment entry requires double confirmation before submission.
+
+BR-114
+Payment confirmation screen must show:
+- rental/unit
+- customer
+- amount
+- payment date
+- notes, if any
+
+BR-115
+Once submitted, payment becomes locked.
+
+BR-116
+If a payment mistake occurs, it must be handled through Admin correction workflow.
+
+BR-117
+payment_date records the date cash was received.
+
+BR-118
+entered_at records when the payment was entered into the system.
+
+BR-119
+Payments must be entered immediately when cash is received.
+
+BR-120
+If payment_date is earlier than the entered_at date, the payment is considered backdated.
+
+BR-121
+Backdated payments are sensitive actions.
+
+BR-122
+Backdated payments must create review flags according to system settings.
+
+==================================================
+9. DEPOSIT RULES
+==================================================
+
+BR-123
+Deposit is a refundable security deposit.
+
+BR-124
+Deposit is not revenue.
+
+BR-125
+Deposit is not an automatic first-month payment.
+
+BR-126
+Deposit remains held during the rental unless manually applied to unpaid balance.
+
+BR-127
+Deposit application is a sensitive action.
+
+BR-128
+Deposit application behavior must be controlled by system settings:
+- allowed + flagged
+OR
+- blocked / approval required
+
+BR-129
+If deposit is applied, it must be traceable.
+
+BR-130
+Deposit application must indicate the balance impact and include an application note.
+
+BR-131
+Deposit refund handling is out of scope for v1.
+
+==================================================
+10. METER READING RULES
+==================================================
+
+BR-132
+Meter readings are required:
+- at rental start
+- at each billing period
+- at rental closure
+
+BR-133
+Meter reading types:
+- Initial
+- Periodic
+- Final
+
+BR-134
+Initial reading is recorded when rental begins.
+
+BR-135
+Periodic reading is recorded for billing periods.
+
+BR-136
+Final reading is recorded when rental closes.
+
+BR-137
+Meter reading submission requires double entry.
+
+BR-138
+The Operator must enter the meter reading value twice.
+
+BR-139
+Both meter reading values must match before submission can continue.
+
+BR-140
+After the two entered values match, the system must show a preview confirmation screen before final submission.
+
+BR-141
+The preview confirmation screen must clearly show:
+- unit
+- rental
+- customer
+- billing period, if applicable
+- reading type
+- reading value
+- reading date
+
+BR-142
+Once submitted, meter readings are locked.
+
+BR-143
+Operator cannot edit submitted meter readings.
+
+BR-144
+Operator cannot delete submitted meter readings.
+
+BR-145
+No meter reading correction workflow exists in normal Operator v1 workflow.
+
+BR-146
+Meter reading mistakes require Admin correction workflow.
+
+BR-147
+No photo requirement exists in v1.
+
+BR-148
+Electricity usage is calculated as:
+
+new reading - previous reading
+
+BR-149
+Electricity charge is calculated as:
+
+usage × global electricity rate
+
+==================================================
+11. ELECTRICITY RATE RULES
+==================================================
+
+BR-150
+There is no electricity_rates table in v1.
+
+BR-151
+Electricity rate is stored as a global system setting.
+
+BR-152
+Electricity rate changes are sensitive system setting changes.
+
+BR-153
+When an electricity charge is generated, the charge stores electricity_rate_snapshot.
+
+BR-154
+Electricity rate changes must not rewrite historical electricity charges.
+
+BR-155
+Category-specific electricity rates are out of scope for v1.
+
+BR-156
+Unit-specific electricity rates are out of scope for v1.
+
+==================================================
+12. DELINQUENCY RULES
+==================================================
+
+BR-157
+Late payment alone is not suspicious.
+
+BR-158
+Delinquency is a business state, not evidence of misconduct.
+
+BR-159
+A rental becomes delinquent when:
+- an unpaid balance exists
+AND
+- the billing period due date has passed
+AND
+- the seven-day grace period has expired
+
+BR-160
+Partial payment reduces amount owed but does not clear delinquency unless the rental is fully caught up.
+
+BR-161
+A delinquent rental remains flagged until fully caught up or Admin override is applied.
+
+BR-162
+A delinquent unit remains unavailable unless Admin override is applied.
+
+BR-163
+Delinquency restriction override is a sensitive action.
+
+BR-164
+Delinquency restriction override behavior must be controlled by system settings:
+- allowed + flagged
+OR
+- blocked / approval required
+
+==================================================
+13. SENSITIVE ACTION CONTROL RULES
+==================================================
+
+BR-165
+Sensitive Operator actions are allowed by default but quietly flagged for Admin review, unless the relevant system setting blocks or requires approval for that action.
+
+BR-166
+Each sensitive action must have configurable behavior:
+- allowed + flagged
+OR
+- blocked / approval required
+
+BR-167
+Sensitive actions include:
+- backdated payment entered
+- unit marked maintenance
+- unit kept in maintenance too long
+- delinquency restriction overridden
+- electricity rate changed
+- sensitive system setting changed
+- deposit applied
+- Admin charge override
+- Admin charge void
+- Admin financial correction
+- Admin meter reading correction
+- Admin payment correction
+
+BR-168
+Review flags must not be created for every normal action.
+
+BR-169
+Review flags must be high-signal Admin review markers.
+
+==================================================
+14. REVIEW FLAG RULES
+==================================================
+
+BR-170
+Review flags represent sensitive or unusual actions that Admin may want to inspect.
+
+BR-171
+Review flags are not general audit logs.
+
+BR-172
+Review flags are created quietly by the system.
+
+BR-173
+Review flags are not shown to Operator.
+
+BR-174
+Review flag statuses:
+- Pending
+- Reviewed
+- Dismissed
+
+BR-175
+Only Admin can mark review flags as Reviewed or Dismissed.
+
+BR-176
+Review flags do not store who performed the action.
+
+BR-177
+Actor/action history belongs in audit logs.
+
+BR-178
+If an action requires a reason, the reason belongs on the original business record or admin correction record, not the review flag.
+
+BR-179
+Admin comments on review flags use the generic notes system.
+
+==================================================
+15. AUDIT LOG RULES
+==================================================
+
+BR-180
+Audit logs are action history only.
+
+BR-181
+Audit logs record:
+- who did the action
+- what action happened
+- when it happened
+- what record was affected
+
+BR-182
+Audit logs are not the primary control mechanism.
+
+BR-183
+Primary control comes from:
+- locked fields
+- append-only notes
+- review flags
+- configurable allowed/blocked settings for sensitive actions
+- Admin-only correction workflow
+
+BR-184
+Audit logs are visible to Admin.
+
+BR-185
+Audit logs are not visible to Operator.
+
+BR-186
+Audit logs are not editable by Operator.
+
+BR-187
+Audit logs are append-only under normal application behavior.
+
+BR-188
+Normal note creation does not create an audit log.
+
+BR-189
+Admin note hiding creates an audit log.
+
+BR-190
+Admin note restoring creates an audit log.
+
+==================================================
+16. SYSTEM SETTING RULES
+==================================================
+
+BR-191
+System settings store configurable system and business behavior.
+
+BR-192
+System settings may control:
+- grace period days
+- minimum rental days
+- electricity rate
+- sensitive action behavior
+- review flag thresholds
+- operational defaults
+- technical feature switches
+
+BR-193
+Operator cannot edit system settings.
+
+BR-194
+Admin can edit business-facing system settings.
+
+BR-195
+Dev can edit system settings for technical maintenance, debugging, deployment, or emergency repair.
+
+BR-196
+Sensitive system setting changes must create review flags.
+
+BR-197
+Setting change history belongs in audit logs.
+
+BR-198
+System settings do not need updated_by fields in v1.
+
+==================================================
+17. ADMIN CORRECTION RULES
+==================================================
+
+BR-199
+Operator cannot delete, reverse, or drop financial records after submission.
+
+BR-200
+Locked records include:
+- payments
+- charges
+- meter readings
+- billing periods
+- rentals after closure
+
+BR-201
+Serious corrections require Admin-level action.
+
+BR-202
+Admin corrections must be tracked through an admin corrections workflow.
+
+BR-203
+Admin corrections must be represented by a dedicated admin_corrections table in v1.
+
+BR-204
+Admin correction actions must:
+- be unavailable to Operator
+- require explicit confirmation
+- create an audit log entry
+- create a review flag if financially sensitive
+- preserve enough history to show what changed and why
+
+BR-205
+Admin correction must not silently erase business history.
+
+BR-206
+Admin correction must prefer correction records, status changes, or explicit admin correction entries over hard deletion.
+
+BR-207
+Hard technical database repair is a Dev/emergency maintenance action, not normal application behavior.
+
+==================================================
+18. REPORTING RULES
+==================================================
+
+BR-208
+Reports are calendar-month based.
+
+BR-209
+Gross revenue means cash received during that calendar month.
+
+BR-210
+Deposits are not revenue.
+
+BR-211
+Operator can access operational reports only.
+
+BR-212
+Operator-accessible reports include:
+- occupancy report
+- delinquency report
+
+BR-213
+Admin and Dev can access oversight and financial reports.
+
+BR-214
+Oversight and financial reports include:
+- monthly cash received
+- rent charges
+- electricity charges
+- total payments received
+- outstanding balances
+- occupied units
+- available units
+- maintenance units
+- delinquent rentals
+- sensitive actions
+- review flags
+- admin corrections
+
+BR-215
+Reports must not depend on payment allocations in v1.
+
+BR-216
+Payment reports may use payment_date and entered_at for different oversight views.
+
+BR-217
+payment_date shows when cash was reportedly received.
+
+BR-218
+entered_at shows when the payment was entered into the system.
+
+==================================================
+19. AUTHENTICATION AND SESSION RULES
+==================================================
+
+BR-219
+The system uses ASP.NET Core cookie-based authentication.
+
+BR-220
+The system uses persistent browser sessions.
+
+BR-221
+Persistent sessions remain active until logout, expiration, or invalidation.
+
+BR-222
+Inactive accounts cannot log in.
+
+BR-223
+Role-based access control determines access to business workflows and screens.
+
+==================================================
+20. PREVIEW AND CONFIRMATION RULES
+==================================================
+
+BR-224
+Preview endpoints validate and return calculated preview data only.
+
+BR-225
+Preview endpoints must not save draft records.
+
+BR-226
+Submission endpoints require explicit confirmation where business mistakes are costly.
+
+BR-227
+Preview/confirmation is required for:
+- customer creation
+- rental creation
+- rental closure
+- payment submission
+- meter reading submission
+- deposit application
+- billing/charge generation
+- Admin correction
+- sensitive setting change
+- charge override
+- charge void
+
+==================================================
+21. OUT-OF-SCOPE RULES
+==================================================
+
+BR-228
+The following are out of scope for v1:
+- tax calculation
+- receipts
+- payment processing
+- accounting software integration
+- offline operation
+- customer-facing portal
+- phone-first layout
+- native mobile app
+- photo storage
+- reservation system
+- business customer accounts
+- multiple formal customers per rental
+- Rental_Customers table
+- payment allocations
+- payment reversal workflow
+- electricity_rates table
+- category-specific electricity rates
+- unit-specific electricity rates
+- normal Operator meter reading correction workflow
+- default deposit refund workflow
+- Operator charge override
+- Operator financial correction
+- Operator audit log access
+- Operator review flag access
+- Operator system setting access
+
+==================================================
+END OF DOCUMENT
+==================================================

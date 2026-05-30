@@ -1,0 +1,1921 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: API Contract
+VERSION: 0.2.0
+STATUS: Locked API Draft
+
+==================================================
+1. PURPOSE
+==================================================
+
+This document defines the backend API contract for the Refrigerated Storage Unit Rental System.
+
+This document defines:
+- API modules
+- endpoint paths
+- HTTP methods
+- endpoint purpose
+- role access
+- request data
+- response data
+- validation rules
+- business effects
+
+This API contract guides the ASP.NET Core Web API implementation.
+
+==================================================
+2. API DESIGN PRINCIPLES
+==================================================
+
+API-001
+The API must support real business workflows, not only raw CRUD operations.
+
+API-002
+Operator endpoints must support daily business use without exposing privileged correction or oversight tools.
+
+API-003
+Admin endpoints must support oversight, settings, review flags, audit review, financial review, and correction workflows.
+
+API-004
+Dev can access all endpoints for technical maintenance, debugging, deployment support, and emergency repair.
+
+API-005
+Dev access is not normal business workflow.
+
+API-006
+Financial records must not be silently edited, deleted, reversed, or overwritten.
+
+API-007
+Preview endpoints validate and return calculated preview data only.
+
+API-008
+Preview endpoints must not save draft records.
+
+API-009
+Submission endpoints require explicit confirmation where business mistakes are costly.
+
+API-010
+Sensitive actions must create audit logs and review flags where required.
+
+API-011
+Normal note creation does not create an audit log.
+
+API-012
+Admin note hiding and note restoring must create audit logs.
+
+API-013
+List endpoints must support pagination.
+
+API-014
+Major list endpoints must support filters.
+
+API-015
+The API must support tablet-first frontend workflows.
+
+==================================================
+3. AUTHENTICATION
+==================================================
+
+Authentication approach:
+- ASP.NET Core cookie-based authentication
+- Persistent browser sessions
+- Role-based access control
+
+Supported roles:
+- operator
+- admin
+- dev
+
+Rules:
+- Inactive accounts cannot log in.
+- Role determines business access.
+- Dev has full technical access.
+- Operator cannot access audit logs, review flags, Admin corrections, system settings, or oversight financial reports.
+- Admin can access oversight and correction workflows.
+- Persistent sessions remain active until logout, expiration, or invalidation.
+
+==================================================
+4. STANDARD LIST BEHAVIOR
+==================================================
+
+All list endpoints must support:
+
+Query:
+- page
+- pageSize
+
+Major list endpoints should also support relevant filters such as:
+- search
+- status
+- fromDate
+- toDate
+- customerId
+- unitId
+- rentalId
+- recordType
+- actionType
+
+Response:
+- items
+- page
+- pageSize
+- totalCount
+- totalPages
+
+==================================================
+5. AUTH / SESSION ENDPOINTS
+==================================================
+
+POST /auth/login
+
+Purpose:
+Log in using username and password.
+
+Access:
+- public
+
+Request:
+- username
+- password
+
+Response:
+- account id
+- username
+- role
+- session status
+
+Rules:
+- inactive accounts cannot log in
+- invalid credentials return authentication error
+- successful login creates persistent cookie session
+
+--------------------------------------------------
+
+POST /auth/logout
+
+Purpose:
+Log out current account.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- none
+
+Response:
+- success status
+
+Rules:
+- active session is invalidated
+
+--------------------------------------------------
+
+GET /auth/me
+
+Purpose:
+Return current logged-in account context.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- account id
+- username
+- role
+- is_active
+
+--------------------------------------------------
+
+POST /auth/refresh
+
+Purpose:
+Refresh or validate current persistent session.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- session status
+- account role
+
+==================================================
+6. ACCOUNT ENDPOINTS
+==================================================
+
+GET /accounts
+
+Purpose:
+List role-based accounts.
+
+Access:
+- admin
+- dev
+
+Response:
+- paginated account list
+
+--------------------------------------------------
+
+GET /accounts/{id}
+
+Purpose:
+View account details.
+
+Access:
+- admin
+- dev
+
+Response:
+- account id
+- username
+- role
+- is_active
+- created_at
+- updated_at
+
+--------------------------------------------------
+
+POST /accounts
+
+Purpose:
+Create role-based account.
+
+Access:
+- admin
+- dev
+
+Request:
+- username
+- password
+- role
+
+Rules:
+- username must be unique
+- password must be stored only as password_hash
+- role must be operator, admin, or dev
+
+Effects:
+- account created
+- audit log created
+
+--------------------------------------------------
+
+PATCH /accounts/{id}/status
+
+Purpose:
+Activate or deactivate account.
+
+Access:
+- admin
+- dev
+
+Request:
+- is_active
+
+Effects:
+- account active status updated
+- audit log created
+
+--------------------------------------------------
+
+PATCH /accounts/{id}/password
+
+Purpose:
+Change account password.
+
+Access:
+- admin
+- dev
+
+Request:
+- new_password
+
+Rules:
+- raw password must never be stored
+
+Effects:
+- password_hash updated
+- audit log created
+
+==================================================
+7. CUSTOMER ENDPOINTS
+==================================================
+
+GET /customers
+
+Purpose:
+List and search customers.
+
+Access:
+- operator
+- admin
+- dev
+
+Query:
+- page
+- pageSize
+- search
+- phone
+- id_number
+- is_active
+
+Response:
+- paginated customer summaries
+
+--------------------------------------------------
+
+GET /customers/{id}
+
+Purpose:
+Get customer details.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- customer details
+- active rental summaries
+- notes
+- balance summary
+
+--------------------------------------------------
+
+POST /customers/preview
+
+Purpose:
+Validate customer creation and return confirmation preview.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- full_name
+- phone_number
+- id_type
+- id_number
+- emergency_contact_name
+- emergency_contact_phone
+
+Response:
+- normalized preview
+- validation status
+- validation messages
+
+Rules:
+- does not create customer
+- required fields must be present
+
+--------------------------------------------------
+
+POST /customers
+
+Purpose:
+Create customer after confirmation.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- full_name
+- phone_number
+- id_type
+- id_number
+- emergency_contact_name
+- emergency_contact_phone
+- confirmed: true
+
+Rules:
+- confirmation required
+- customer locks after creation
+
+Effects:
+- customer created
+- audit log created
+
+--------------------------------------------------
+
+PATCH /customers/{id}
+
+Purpose:
+Correct customer fields.
+
+Access:
+- admin
+- dev
+
+Request:
+- corrected fields
+- reason
+
+Rules:
+- operator cannot use this endpoint
+- reason required
+
+Effects:
+- customer updated
+- admin correction created
+- audit log created
+
+==================================================
+8. UNIT ENDPOINTS
+==================================================
+
+GET /units
+
+Purpose:
+List units.
+
+Access:
+- operator
+- admin
+- dev
+
+Query:
+- page
+- pageSize
+- status
+- search
+- is_active
+
+Response:
+- paginated unit summaries
+- current rental summary if rented
+
+--------------------------------------------------
+
+GET /units/{id}
+
+Purpose:
+Get unit details.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- unit details
+- current active rental if any
+- notes
+
+--------------------------------------------------
+
+POST /units
+
+Purpose:
+Create unit.
+
+Access:
+- admin
+- dev
+
+Request:
+- unit_code
+- base_rent_amount
+- description
+- location_note
+
+Rules:
+- unit_code must be unique
+- base_rent_amount must be greater than or equal to 0
+- initial status is available
+
+Effects:
+- unit created
+- audit log created
+
+--------------------------------------------------
+
+PATCH /units/{id}/maintenance
+
+Purpose:
+Place unit into maintenance or return unit from maintenance.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- status: maintenance OR available
+
+Rules:
+- rented unit cannot move directly to maintenance through normal Operator workflow
+- maintenance status change is sensitive
+
+Effects:
+- unit status updated
+- audit log created
+- review flag created according to system settings
+
+--------------------------------------------------
+
+PATCH /units/{id}
+
+Purpose:
+Correct unit fields.
+
+Access:
+- admin
+- dev
+
+Request:
+- corrected fields
+- reason
+
+Effects:
+- unit updated
+- admin correction created if correction is sensitive
+- audit log created
+- review flag created if required
+
+==================================================
+9. RENTAL ENDPOINTS
+==================================================
+
+GET /rentals
+
+Purpose:
+List rentals.
+
+Access:
+- operator
+- admin
+- dev
+
+Query:
+- page
+- pageSize
+- status
+- customer_id
+- unit_id
+- is_delinquent
+- active_only
+
+Response:
+- paginated rental summaries
+
+--------------------------------------------------
+
+GET /rentals/{id}
+
+Purpose:
+Get rental details.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- rental details
+- customer
+- unit
+- billing periods
+- charges
+- payments
+- balance
+- deposit credit
+- meter readings
+- notes
+
+--------------------------------------------------
+
+POST /rentals/preview
+
+Purpose:
+Validate rental start and return confirmation preview.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- customer_id
+- unit_id
+- start_date
+- rent_amount
+- deposit_amount
+- initial_meter_reading_value_1
+- initial_meter_reading_value_2
+
+Response:
+- customer summary
+- unit summary
+- minimum_end_date
+- billing anchor
+- first billing period preview
+- first rent charge preview
+- deposit preview
+- initial meter reading preview
+- validation status
+
+Rules:
+- does not create rental
+- unit must be available
+- customer must exist
+- initial meter reading values must match
+
+--------------------------------------------------
+
+POST /rentals
+
+Purpose:
+Create rental after confirmation.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- customer_id
+- unit_id
+- start_date
+- rent_amount
+- deposit_amount
+- initial_meter_reading_value_1
+- initial_meter_reading_value_2
+- confirmed: true
+
+Rules:
+- confirmation required
+- unit must be available
+- meter reading values must match
+
+Effects:
+- rental created
+- unit status changed to rented
+- initial meter reading created and locked
+- first billing period created
+- first rent charge generated and locked
+- deposit credit created if deposit_amount > 0
+- audit logs created
+
+--------------------------------------------------
+
+POST /rentals/{id}/close/preview
+
+Purpose:
+Validate rental closure and return confirmation preview.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- close_date
+- final_meter_reading_value_1
+- final_meter_reading_value_2
+
+Response:
+- rental summary
+- final meter reading preview
+- final electricity usage preview
+- final charge preview
+- final balance preview
+- validation status
+
+Rules:
+- does not close rental
+- final meter reading values must match
+- Operator cannot close early
+
+--------------------------------------------------
+
+POST /rentals/{id}/close
+
+Purpose:
+Close rental after confirmation.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- close_date
+- final_meter_reading_value_1
+- final_meter_reading_value_2
+- confirmed: true
+- admin_override_reason when required
+
+Rules:
+- confirmation required
+- final meter reading values must match
+- Operator can close only when all closure rules pass
+- early closure requires Admin correction workflow
+
+Effects:
+- final meter reading created and locked
+- final electricity charge generated if applicable
+- rental status changed to closed
+- unit status updated if allowed
+- audit log created
+- review flag created if override/correction is used
+
+--------------------------------------------------
+
+GET /rentals/{id}/balance
+
+Purpose:
+Get current rental balance.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- total_charges
+- total_payments
+- applied_deposit
+- outstanding_balance
+- is_delinquent
+
+==================================================
+10. BILLING PERIOD ENDPOINTS
+==================================================
+
+GET /rentals/{id}/billing-periods
+
+Purpose:
+List billing periods for rental.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- paginated billing period list
+
+--------------------------------------------------
+
+GET /billing-periods/{id}
+
+Purpose:
+Get billing period details.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- billing period details
+- related charges
+- related meter reading
+- status
+
+--------------------------------------------------
+
+POST /billing-periods/generate-due/preview
+
+Purpose:
+Preview eligible billing periods and rent charges before generation.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id optional
+- as_of_date
+
+Response:
+- eligible rentals
+- billing periods to create
+- rent charges to create
+- validation status
+
+Rules:
+- does not create billing periods or charges
+
+--------------------------------------------------
+
+POST /billing-periods/generate-due
+
+Purpose:
+Generate eligible billing periods and rent charges.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id optional
+- as_of_date
+- confirmed: true
+
+Rules:
+- charge values are calculated by the system
+- generated charges are locked after creation
+- Operator cannot edit generated charge values
+
+Effects:
+- billing periods created where eligible
+- rent charges generated where eligible
+- audit logs created
+
+==================================================
+11. CHARGE ENDPOINTS
+==================================================
+
+GET /rentals/{id}/charges
+
+Purpose:
+List charges for rental.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- paginated charge list
+
+--------------------------------------------------
+
+GET /charges/{id}
+
+Purpose:
+Get charge details.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- charge details
+- notes
+- admin correction history for Admin/Dev
+
+--------------------------------------------------
+
+POST /charges/electricity/preview
+
+Purpose:
+Preview electricity charge from meter reading data.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id
+- billing_period_id
+- new_meter_reading_value
+
+Response:
+- previous reading
+- new reading
+- usage
+- electricity_rate_snapshot
+- calculated charge
+- validation status
+
+Rules:
+- does not create charge
+
+--------------------------------------------------
+
+POST /charges/electricity
+
+Purpose:
+Create electricity charge from submitted meter reading.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id
+- billing_period_id
+- meter_reading_id
+- confirmed: true
+
+Rules:
+- charge value is calculated by the system
+- electricity_rate_snapshot is stored
+- charge status is open
+- charge is locked after creation
+
+Effects:
+- electricity charge created
+- audit log created
+
+--------------------------------------------------
+
+POST /charges/{id}/void
+
+Purpose:
+Void charge through Admin correction.
+
+Access:
+- admin
+- dev
+
+Request:
+- reason
+- confirmed: true
+
+Rules:
+- reason required
+- original charge is not deleted
+
+Effects:
+- charge status changed to voided_by_admin
+- admin correction created
+- audit log created
+- review flag created if financially sensitive
+
+--------------------------------------------------
+
+POST /charges/{id}/override
+
+Purpose:
+Override charge amount through Admin correction.
+
+Access:
+- admin
+- dev
+
+Request:
+- new_amount
+- reason
+- confirmed: true
+
+Rules:
+- reason required
+- Operator cannot use this endpoint
+- charge edit history lives in admin_corrections and audit_logs
+
+Effects:
+- charge amount corrected
+- is_overridden set to true
+- override note or correction reason stored
+- admin correction created
+- audit log created
+- review flag created if financially sensitive
+
+==================================================
+12. PAYMENT ENDPOINTS
+==================================================
+
+GET /rentals/{id}/payments
+
+Purpose:
+List payments for rental.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- paginated payment list
+
+--------------------------------------------------
+
+GET /payments/{id}
+
+Purpose:
+Get payment details.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- payment details
+
+--------------------------------------------------
+
+POST /payments/preview
+
+Purpose:
+Validate and preview payment before final submission.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id
+- amount
+- payment_date
+
+Response:
+- customer summary
+- unit summary
+- rental summary
+- amount
+- payment_date
+- entered_at preview
+- is_backdated
+- resulting balance preview
+- validation status
+
+Rules:
+- does not create payment
+- amount must be positive
+- rental must exist
+
+--------------------------------------------------
+
+POST /payments
+
+Purpose:
+Create locked payment after confirmation.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id
+- amount
+- payment_date
+- confirmed: true
+
+Rules:
+- confirmation required
+- payment is locked after submission
+- no edit after submission
+- no delete after submission
+- no reversal workflow
+
+Effects:
+- payment created
+- balance recalculated
+- audit log created
+- review flag created if backdated
+
+==================================================
+13. DEPOSIT ENDPOINTS
+==================================================
+
+GET /rentals/{id}/deposit
+
+Purpose:
+View deposit credit for rental.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- original_amount
+- remaining_amount
+- applied_amount
+- status
+
+--------------------------------------------------
+
+POST /rentals/{id}/deposit/apply/preview
+
+Purpose:
+Preview applying deposit to outstanding balance.
+
+Access:
+- operator when setting allows
+- admin
+- dev
+
+Request:
+- amount
+- application_note
+
+Response:
+- current balance
+- deposit remaining
+- applied amount preview
+- resulting balance
+- validation status
+
+Rules:
+- does not apply deposit
+- application_note required
+
+--------------------------------------------------
+
+POST /rentals/{id}/deposit/apply
+
+Purpose:
+Apply deposit to outstanding balance.
+
+Access:
+- operator when setting allows
+- admin
+- dev
+
+Request:
+- amount
+- application_note
+- confirmed: true
+
+Rules:
+- confirmation required
+- application_note required
+- deposit cannot apply more than remaining amount
+
+Effects:
+- applied_amount increases
+- remaining_amount decreases
+- balance recalculated
+- audit log created
+- review flag created according to system settings
+
+==================================================
+14. METER READING ENDPOINTS
+==================================================
+
+GET /rentals/{id}/meter-readings
+
+Purpose:
+List meter readings for rental.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- paginated meter reading list
+
+--------------------------------------------------
+
+GET /meter-readings/{id}
+
+Purpose:
+Get meter reading details.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- meter reading details
+
+--------------------------------------------------
+
+POST /meter-readings/preview
+
+Purpose:
+Validate double entry and preview meter reading before submission.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id
+- billing_period_id optional
+- reading_type
+- reading_value_1
+- reading_value_2
+- reading_date
+
+Response:
+- unit summary
+- rental summary
+- customer summary
+- billing period summary when applicable
+- reading_type
+- reading_value
+- reading_date
+- previous_reading
+- usage preview when applicable
+- validation status
+
+Rules:
+- does not create meter reading
+- reading_value_1 must equal reading_value_2
+
+--------------------------------------------------
+
+POST /meter-readings
+
+Purpose:
+Submit locked meter reading after confirmation.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- rental_id
+- billing_period_id optional
+- reading_type
+- reading_value_1
+- reading_value_2
+- reading_date
+- confirmed: true
+
+Rules:
+- confirmation required
+- reading_value_1 must equal reading_value_2
+- Operator cannot edit or delete after submission
+
+Effects:
+- meter reading created
+- meter reading locked
+- audit log created
+- electricity charge generated where applicable
+
+==================================================
+15. NOTE ENDPOINTS
+==================================================
+
+GET /notes
+
+Purpose:
+List notes by record.
+
+Access:
+- operator
+- admin
+- dev
+
+Query:
+- page
+- pageSize
+- record_type
+- record_id
+- include_hidden
+
+Rules:
+- Operator cannot view hidden notes
+- Admin and Dev can view hidden notes
+
+Response:
+- paginated note list
+
+--------------------------------------------------
+
+POST /notes
+
+Purpose:
+Add note to supported record.
+
+Access:
+- operator
+- admin
+- dev
+
+Request:
+- record_type
+- record_id
+- note_text
+
+Rules:
+- note_text cannot be empty
+- Operator cannot edit or delete notes
+- normal note creation does not create audit log
+
+Effects:
+- note created
+
+--------------------------------------------------
+
+POST /notes/{id}/hide
+
+Purpose:
+Hide note.
+
+Access:
+- admin
+- dev
+
+Request:
+- admin_hide_note
+
+Rules:
+- admin_hide_note required
+
+Effects:
+- is_hidden_by_admin set to true
+- audit log created
+
+--------------------------------------------------
+
+POST /notes/{id}/restore
+
+Purpose:
+Restore hidden note.
+
+Access:
+- admin
+- dev
+
+Effects:
+- is_hidden_by_admin set to false
+- audit log created
+
+==================================================
+16. REVIEW FLAG ENDPOINTS
+==================================================
+
+GET /review-flags
+
+Purpose:
+List review flags.
+
+Access:
+- admin
+- dev
+
+Query:
+- page
+- pageSize
+- status
+- action_type
+- record_type
+- fromDate
+- toDate
+
+Response:
+- paginated review flag list
+
+--------------------------------------------------
+
+GET /review-flags/{id}
+
+Purpose:
+Get review flag details.
+
+Access:
+- admin
+- dev
+
+Response:
+- review flag
+- linked record summary
+- related audit log where available
+- notes
+
+--------------------------------------------------
+
+POST /review-flags/{id}/review
+
+Purpose:
+Mark review flag as reviewed.
+
+Access:
+- admin
+- dev
+
+Request:
+- optional note_text
+
+Effects:
+- status changed to reviewed
+- reviewed_at populated
+- optional note created
+- audit log created
+
+--------------------------------------------------
+
+POST /review-flags/{id}/dismiss
+
+Purpose:
+Dismiss review flag.
+
+Access:
+- admin
+- dev
+
+Request:
+- optional note_text
+
+Effects:
+- status changed to dismissed
+- reviewed_at populated
+- optional note created
+- audit log created
+
+==================================================
+17. AUDIT LOG ENDPOINTS
+==================================================
+
+GET /audit-logs
+
+Purpose:
+List audit logs.
+
+Access:
+- admin
+- dev
+
+Query:
+- page
+- pageSize
+- action_type
+- record_type
+- record_id
+- performed_by_account_role
+- fromDate
+- toDate
+
+Response:
+- paginated audit log list
+
+Rules:
+- Operator cannot access audit logs
+
+--------------------------------------------------
+
+GET /audit-logs/{id}
+
+Purpose:
+View audit log details.
+
+Access:
+- admin
+- dev
+
+Response:
+- audit log details
+- previous_value
+- new_value
+- notes
+
+==================================================
+18. SYSTEM SETTING ENDPOINTS
+==================================================
+
+GET /system-settings
+
+Purpose:
+List system settings.
+
+Access:
+- admin
+- dev
+
+Response:
+- paginated settings list
+
+--------------------------------------------------
+
+GET /system-settings/{key}
+
+Purpose:
+Get setting by key.
+
+Access:
+- admin
+- dev
+
+Response:
+- setting details
+
+--------------------------------------------------
+
+PATCH /system-settings/{key}
+
+Purpose:
+Update setting.
+
+Access:
+- admin
+- dev
+
+Request:
+- setting_value
+- reason when sensitive
+
+Rules:
+- Operator cannot edit settings
+- sensitive setting change requires reason
+
+Effects:
+- setting updated
+- audit log created
+- review flag created if sensitive
+
+==================================================
+19. ADMIN CORRECTION ENDPOINTS
+==================================================
+
+GET /admin-corrections
+
+Purpose:
+List Admin corrections.
+
+Access:
+- admin
+- dev
+
+Query:
+- page
+- pageSize
+- correction_type
+- target_record_type
+- target_record_id
+- fromDate
+- toDate
+
+Response:
+- paginated Admin correction list
+
+--------------------------------------------------
+
+GET /admin-corrections/{id}
+
+Purpose:
+Get Admin correction details.
+
+Access:
+- admin
+- dev
+
+Response:
+- correction details
+- linked target record summary
+- audit log
+- review flag if any
+- notes
+
+--------------------------------------------------
+
+POST /admin-corrections/preview
+
+Purpose:
+Preview correction before applying.
+
+Access:
+- admin
+- dev
+
+Request:
+- correction_type
+- target_record_type
+- target_record_id
+- reason
+- new_value
+
+Response:
+- previous_value
+- new_value
+- expected effects
+- validation status
+
+Rules:
+- does not apply correction
+- reason required
+
+--------------------------------------------------
+
+POST /admin-corrections
+
+Purpose:
+Apply privileged correction.
+
+Access:
+- admin
+- dev
+
+Request:
+- correction_type
+- target_record_type
+- target_record_id
+- reason
+- new_value
+- confirmed: true
+
+Rules:
+- confirmation required
+- reason required
+- Operator cannot create Admin corrections
+
+Effects:
+- admin correction record created
+- target record corrected or status changed
+- audit log created
+- review flag created if financially sensitive
+
+==================================================
+20. REPORT ENDPOINTS
+==================================================
+
+GET /reports/monthly-cash
+
+Purpose:
+Monthly gross cash received report.
+
+Access:
+- admin
+- dev
+
+Query:
+- year
+- month
+- basis:
+  - payment_date
+  - entered_at
+
+Response:
+- total cash received
+- payment count
+- backdated payment count
+- totals by day
+
+Rules:
+- deposits are not revenue
+
+--------------------------------------------------
+
+GET /reports/occupancy
+
+Purpose:
+Unit occupancy report.
+
+Access:
+- operator
+- admin
+- dev
+
+Query:
+- date optional
+
+Response:
+- total units
+- available count
+- rented count
+- maintenance count
+- occupancy percentage
+
+--------------------------------------------------
+
+GET /reports/delinquency
+
+Purpose:
+Delinquent rental report.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- delinquent rentals
+- customer
+- unit
+- outstanding balance
+- days delinquent
+
+--------------------------------------------------
+
+GET /reports/charges
+
+Purpose:
+Charge summary report.
+
+Access:
+- admin
+- dev
+
+Query:
+- fromDate
+- toDate
+- charge_type
+
+Response:
+- rent charges
+- electricity charges
+- adjustment charges
+- voided charges
+
+--------------------------------------------------
+
+GET /reports/review-flags
+
+Purpose:
+Review flag summary.
+
+Access:
+- admin
+- dev
+
+Query:
+- fromDate
+- toDate
+- status
+- action_type
+
+Response:
+- pending count
+- reviewed count
+- dismissed count
+- grouped sensitive actions
+
+--------------------------------------------------
+
+GET /reports/admin-corrections
+
+Purpose:
+Admin correction summary.
+
+Access:
+- admin
+- dev
+
+Query:
+- fromDate
+- toDate
+- correction_type
+
+Response:
+- correction count
+- financially sensitive correction count
+- grouped correction types
+
+==================================================
+21. DASHBOARD ENDPOINTS
+==================================================
+
+GET /dashboard/operator
+
+Purpose:
+Operator home dashboard.
+
+Access:
+- operator
+- admin
+- dev
+
+Response:
+- available units count
+- rented units count
+- maintenance units count
+- delinquent rentals count
+- payments recorded today
+- readings due
+- eligible billing generation count
+- operational quick actions
+
+--------------------------------------------------
+
+GET /dashboard/admin
+
+Purpose:
+Admin oversight dashboard.
+
+Access:
+- admin
+- dev
+
+Response:
+- pending review flags
+- recent admin corrections
+- backdated payments
+- maintenance-too-long alerts
+- monthly cash summary
+- delinquency summary
+- sensitive actions summary
+
+==================================================
+22. HEALTH / TECHNICAL ENDPOINTS
+==================================================
+
+GET /health
+
+Purpose:
+Basic health check.
+
+Access:
+- public or internal deployment check
+
+Response:
+- status
+
+--------------------------------------------------
+
+GET /health/database
+
+Purpose:
+Check database connectivity.
+
+Access:
+- dev
+- internal deployment check
+
+Response:
+- database status
+
+==================================================
+23. ENDPOINT COUNT SUMMARY
+==================================================
+
+Auth/session:
+4
+
+Accounts:
+5
+
+Customers:
+5
+
+Units:
+5
+
+Rentals:
+5
+
+Billing periods:
+4
+
+Charges:
+6
+
+Payments:
+4
+
+Deposit:
+3
+
+Meter readings:
+4
+
+Notes:
+4
+
+Review flags:
+4
+
+Audit logs:
+2
+
+System settings:
+3
+
+Admin corrections:
+4
+
+Reports:
+6
+
+Dashboards:
+2
+
+Health:
+2
+
+Approximate total:
+72 endpoints
+
+==================================================
+24. V1 OUT OF SCOPE
+==================================================
+
+The API does not support:
+
+- customer-facing portal
+- online payment processing
+- tax calculation
+- receipt generation
+- payment reversal workflow
+- payment allocation workflow
+- phone-first mobile app API
+- native mobile app API
+- offline sync
+- photo upload
+- multiple formal customers per rental
+- electricity rate table management
+- Operator charge override
+- Operator financial correction
+- Operator meter reading correction
+- Operator audit log access
+- Operator review flag access
+- Operator system setting access
+
+==================================================
+END OF DOCUMENT
+==================================================

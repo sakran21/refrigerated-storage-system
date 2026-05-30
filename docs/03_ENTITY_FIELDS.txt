@@ -1,0 +1,1219 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: Entity Fields
+VERSION: 0.6.0
+STATUS: Locked Entity Field Draft
+
+==================================================
+1. PURPOSE
+==================================================
+
+This document defines the business data entities required by the system.
+
+This document does not define:
+- final database syntax
+- API endpoints
+- UI screens
+- implementation code
+
+This document defines what information must exist for the business to function correctly.
+
+This document is a source reference for schema design, API contracts, UI planning, and implementation.
+
+==================================================
+2. ENTITY LIST
+==================================================
+
+Core entities:
+
+- Account
+- Customer
+- Unit
+- Rental
+- Billing Period
+- Charge
+- Payment
+- Deposit Credit
+- Meter Reading
+- Note
+- Audit Log
+- Review Flag
+- System Setting
+- Admin Correction
+
+Removed from v1:
+
+- Customer Note
+- Rental Customer
+- Payment Allocation
+- Electricity Rate
+
+==================================================
+3. ACCOUNT
+==================================================
+
+Purpose:
+Represents a simple role-based system access account.
+
+Account is not an employee profile.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+username
+- Required
+- Unique
+- Used for login
+
+password_hash
+- Required
+- Raw password must never be stored
+
+role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+
+is_active
+- Required
+- Boolean
+- Default: true
+
+created_at
+- Required
+- Timestamp
+
+updated_at
+- Required
+- Timestamp
+
+Validation Rules:
+- Username must be unique.
+- Account must have exactly one role.
+- Inactive accounts cannot log in.
+- Operator performs daily business operations.
+- Admin performs oversight, review, settings control, and privileged correction actions.
+- Dev performs technical maintenance, debugging, deployment, emergency repair, and technical production support.
+- Dev has full technical access when needed for maintenance, debugging, deployment, or emergency repair.
+- Dev must not act as the normal daily business operator except for testing, debugging, repair, emergency support, or production maintenance.
+
+Design Rules:
+- Do not add employee profile fields.
+- Do not add department/team fields.
+- Do not add contact details.
+- Do not add complex permission tables in v1.
+
+==================================================
+4. CUSTOMER
+==================================================
+
+Purpose:
+Represents an individual customer responsible for one or more rentals.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+full_name
+- Required
+- Text
+
+phone_number
+- Required
+- Text
+- Searchable
+
+id_type
+- Required
+- Text
+- Allowed examples:
+  - passport
+  - driver_license
+  - student_id
+  - other
+
+id_number
+- Required
+- Text
+
+emergency_contact_name
+- Required
+- Text
+
+emergency_contact_phone
+- Required
+- Text
+
+is_active
+- Required
+- Boolean
+- Default: true
+
+created_at
+- Required
+- Timestamp
+
+updated_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+Validation Rules:
+- Customer cannot be created without required identity and emergency contact fields.
+- Operator must review customer details before final submission.
+- Customer record is locked after creation.
+- Operator cannot edit customer identity/contact fields after creation.
+- Admin can edit customer fields through correction workflow.
+- Customer records must remain available for historical reference.
+- Customer records must not be hard-deleted after related business activity exists.
+
+Notes:
+- Customer notes are stored through the generic Note entity.
+- Operator can add notes.
+- Operator cannot edit or delete existing notes.
+
+==================================================
+5. UNIT
+==================================================
+
+Purpose:
+Represents one physical refrigerated storage unit.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+unit_code
+- Required
+- Unique
+- Visible business identifier
+- Examples:
+  - UNIT-001
+  - A1
+  - Freezer-04
+
+status
+- Required
+- Allowed values:
+  - available
+  - rented
+  - maintenance
+
+description
+- Optional
+- Text
+- Short static description of the unit
+
+location_note
+- Optional
+- Text
+- Short static location description
+
+base_rent_amount
+- Required
+- Money value
+- Must be greater than or equal to 0
+
+is_active
+- Required
+- Boolean
+- Default: true
+
+created_at
+- Required
+- Timestamp
+
+updated_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+updated_by_account_role
+- Optional
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+Validation Rules:
+- unit_code must be unique.
+- Unit cannot be rented if status is rented.
+- Unit cannot be rented if status is maintenance.
+- Unit cannot have more than one active rental.
+- Unit status changes must be recorded.
+- Maintenance changes are sensitive actions.
+- Unit records must not be hard-deleted after business activity exists.
+
+Notes:
+- unit_code is the label used by the business.
+- Internal database id must not be used as the visible unit label.
+- Unit notes are stored through the generic Note entity.
+
+==================================================
+6. RENTAL
+==================================================
+
+Purpose:
+Represents one unit rental lifecycle from start to closure.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+unit_id
+- Required
+- FK -> units.id
+
+customer_id
+- Required
+- FK -> customers.id
+- Responsible customer for this rental
+
+status
+- Required
+- Allowed values:
+  - active
+  - closed
+
+is_delinquent
+- Required
+- Boolean
+- Default: false
+
+delinquency_restriction_overridden
+- Required
+- Boolean
+- Default: false
+
+delinquency_override_note
+- Optional
+- Required if delinquency restriction is overridden
+- Structured explanation field, not a general note
+
+start_date
+- Required
+- Date
+
+end_date
+- Optional
+- Date
+
+minimum_end_date
+- Required
+- Derived from start_date + configured minimum rental days
+
+billing_anchor_day
+- Required
+- Derived from start_date
+
+rent_amount_snapshot
+- Required
+- Money value
+- Rent amount used for this rental
+
+deposit_amount
+- Required
+- Money value
+- May be zero
+
+locked_after_closure
+- Required
+- Boolean
+- Default: true after closure
+
+created_at
+- Required
+- Timestamp
+
+updated_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+closed_by_account_role
+- Optional
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+Validation Rules:
+- Rental cannot start unless unit is available.
+- Rental has one responsible customer.
+- Rental has one unit.
+- Rental cannot close before minimum_end_date unless Admin override is applied.
+- Rental automatically renews until closed.
+- Closing rental requires final meter reading and final balance calculation.
+- Rental status and delinquency are separate.
+- Closed rentals cannot be reopened through normal Operator workflow.
+- Reopening a closed rental requires Admin correction workflow.
+- Rental records must not be hard-deleted.
+
+Balance Rule:
+total charges - total payments - applied deposit = outstanding balance
+
+Notes:
+- Rental notes are stored through the generic Note entity.
+
+==================================================
+7. BILLING PERIOD
+==================================================
+
+Purpose:
+Represents one billing cycle for one rental.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+rental_id
+- Required
+- FK -> rentals.id
+
+period_start_date
+- Required
+- Date
+
+period_end_date
+- Required
+- Date
+
+due_date
+- Required
+- Date
+- Same as period_start_date
+
+grace_period_end_date
+- Required
+- Date
+- due_date + configured grace period days
+
+status
+- Required
+- Allowed values:
+  - open
+  - delinquent
+  - closed
+
+rent_charge_generated
+- Required
+- Boolean
+- Default: false
+
+electricity_charge_generated
+- Required
+- Boolean
+- Default: false
+
+created_at
+- Required
+- Timestamp
+
+updated_at
+- Required
+- Timestamp
+
+Validation Rules:
+- Each active rental must have a current billing period.
+- The first billing period starts on the rental start date.
+- Each new billing period starts on the same calendar day of the next month where possible.
+- If the same calendar day does not exist in the next month, the next billing period starts on the last calendar day of that month.
+- Due date is the first day of the billing period.
+- Grace period is seven calendar days.
+- Day 8 after the due date counts as delinquency-eligible if outstanding balance remains.
+- Rent charge generates automatically at the start of each billing period.
+- Operator can trigger charge generation for eligible rentals and billing periods.
+- Charge values generated through billing generation are calculated by the system.
+- Operator cannot edit generated charge values.
+- Generated charges are locked after creation.
+- Billing periods continue until rental closure.
+- Billing periods must not be hard-deleted after related activity exists.
+
+Removed Fields:
+- meter_reading_required
+- meter_reading_completed
+
+Notes:
+- Meter readings are required for every billing period in v1.
+- Meter reading completion is determined by whether a meter reading exists for the billing period.
+- Billing period notes are stored through the generic Note entity.
+
+==================================================
+8. CHARGE
+==================================================
+
+Purpose:
+Stores amounts owed for a rental.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+rental_id
+- Required
+- FK -> rentals.id
+
+billing_period_id
+- Required
+- FK -> billing_periods.id
+
+charge_type
+- Required
+- Allowed values:
+  - rent
+  - electricity
+  - adjustment
+
+amount
+- Required
+- Money value
+- Must be positive for normal charges
+
+description
+- Optional
+- Text
+- Short explanation of what the charge is
+
+status
+- Required
+- Allowed values:
+  - open
+  - voided_by_admin
+
+is_overridden
+- Required
+- Boolean
+- Default: false
+
+override_note
+- Optional
+- Required if Admin overrides generated charge amount
+- Structured explanation field, not a general note
+
+electricity_rate_snapshot
+- Optional
+- Required only for electricity charges
+
+locked
+- Required
+- Boolean
+- Default: true after submission/generation
+
+created_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+Validation Rules:
+- Charges represent money owed.
+- Charges are separate from payments.
+- Rent charges are generated automatically.
+- Operator can trigger rent charge generation for eligible rentals and billing periods.
+- System calculates generated rent charge values.
+- Electricity charges are generated from meter readings.
+- Electricity charges use the global electricity rate stored in system settings.
+- Electricity charges must store electricity_rate_snapshot.
+- Charges are locked after creation or generation.
+- Charges cannot be edited or deleted by Operator after creation.
+- Operator cannot override generated charge amounts.
+- Charge override is Admin-only.
+- Admin charge override is sensitive.
+- Admin charge override must create audit log entry.
+- Admin charge override must create admin correction record.
+- Admin charge override must create review flag if financially sensitive.
+- Charge voiding is Admin-only.
+- Admin voiding must preserve original charge record by setting status to voided_by_admin.
+- Charges must not be silently deleted.
+- Adjustment charges are Admin-only in v1.
+- Charge edit history lives in admin_corrections and audit_logs.
+
+Notes:
+- There is no electricity_rates table in v1.
+- Charge notes are stored through the generic Note entity.
+
+==================================================
+9. PAYMENT
+==================================================
+
+Purpose:
+Stores cash payments received for a rental.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+rental_id
+- Required
+- FK -> rentals.id
+
+amount
+- Required
+- Money value
+- Must be positive
+
+payment_date
+- Required
+- Date cash was received
+
+entered_at
+- Required
+- Timestamp payment was entered into system
+
+is_backdated
+- Required
+- Boolean
+- True if payment_date is earlier than entered_at date
+
+locked
+- Required
+- Boolean
+- Default: true after submission
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+Validation Rules:
+- Payments are cash-only in v1.
+- payment_method is not stored in v1.
+- Payments reduce rental-level outstanding balance.
+- Partial payments are allowed.
+- Payments are final after creation.
+- Operator cannot edit payments after submission.
+- Operator cannot delete payments after submission.
+- Operator cannot reverse payments after submission.
+- Payment entry requires double confirmation before submission.
+- Payments must be entered immediately when cash is received.
+- If payment_date is earlier than entered_at date, payment is backdated.
+- Backdated payment is sensitive and creates a review flag according to system settings.
+- No payment reversal workflow exists in v1.
+- Payment mistakes require Admin correction workflow.
+
+Removed Fields:
+- payment_method
+- notes
+- is_reversal
+- reverses_payment_id
+- reversal_reason
+
+Notes:
+- Payment allocations are removed from v1.
+- The system does not track exactly which payment paid which charge.
+- Payment notes are stored through the generic Note entity.
+
+==================================================
+10. DEPOSIT CREDIT
+==================================================
+
+Purpose:
+Stores refundable security deposit credit for a rental.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+rental_id
+- Required
+- FK -> rentals.id
+
+original_amount
+- Required
+- Money value
+- Must be greater than or equal to 0
+
+remaining_amount
+- Required
+- Money value
+- Must be greater than or equal to 0
+
+applied_amount
+- Required
+- Money value
+- Default: 0
+
+status
+- Required
+- Allowed values:
+  - held
+  - partially_applied
+  - fully_applied
+
+application_note
+- Optional
+- Required when deposit is applied
+- Structured explanation field, not a general note
+
+created_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+Validation Rules:
+- Deposit is refundable security deposit.
+- Deposit is not revenue.
+- Deposit is not automatic first-month payment.
+- Deposit remains held unless manually applied to unpaid charges.
+- Deposit application is sensitive.
+- Deposit application must be traceable.
+- Deposit application must include an application note.
+- Deposit refund handling is out of scope for v1.
+
+Notes:
+- No deposit allocation table exists in v1.
+- Balance calculation subtracts applied deposit.
+- Deposit credit notes are stored through the generic Note entity.
+
+==================================================
+11. METER READING
+==================================================
+
+Purpose:
+Stores electricity meter readings for rental billing.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+rental_id
+- Required
+- FK -> rentals.id
+
+billing_period_id
+- Optional
+- FK -> billing_periods.id
+- Required for periodic readings
+
+reading_type
+- Required
+- Allowed values:
+  - initial
+  - periodic
+  - final
+
+reading_value
+- Required
+- Numeric value
+
+reading_date
+- Required
+- Date reading was taken
+
+locked
+- Required
+- Boolean
+- Default: true after submission
+
+created_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+Validation Rules:
+- Initial reading is required at rental start.
+- Periodic reading is required at each billing period.
+- Final reading is required at rental closure.
+- Operator must enter the meter reading value twice.
+- Both entered values must match before submission can continue.
+- After both values match, the system must show a preview confirmation screen.
+- Preview confirmation screen must show:
+  - unit
+  - rental
+  - customer
+  - billing period, if applicable
+  - reading type
+  - reading value
+  - reading date
+- Once submitted, reading is locked.
+- Operator cannot edit submitted meter readings.
+- Operator cannot delete submitted meter readings.
+- No photo requirement exists in v1.
+- No normal Operator correction workflow exists in v1.
+- Meter reading mistakes require Admin correction workflow.
+
+Removed Fields:
+- confirmed
+- notes
+
+Notes:
+- Confirmation happens in UI before submission.
+- Stored reading existing means it was submitted.
+- Meter reading notes are stored through the generic Note entity.
+
+==================================================
+12. NOTE
+==================================================
+
+Purpose:
+Stores append-only contextual notes for any major business record.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+record_type
+- Required
+- Text
+- Supported values:
+  - customer
+  - unit
+  - rental
+  - billing_period
+  - charge
+  - payment
+  - deposit_credit
+  - meter_reading
+  - review_flag
+  - audit_log
+  - system_setting
+  - admin_correction
+
+record_id
+- Required
+- Identifier of affected record
+
+note_text
+- Required
+- Text
+
+created_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+is_hidden_by_admin
+- Required
+- Boolean
+- Default: false
+
+admin_hide_note
+- Optional
+- Text
+- Required if Admin hides note
+
+Validation Rules:
+- Every major business record can have notes.
+- Notes are attached to individual records.
+- Notes may be blank at initial record creation.
+- Notes can be appended after record creation.
+- Operator can add notes.
+- Operator cannot edit notes.
+- Operator cannot delete notes.
+- Admin can hide or manage notes.
+- Admin hiding a note must preserve note history.
+- Notes are append-only context records.
+- note_text cannot be empty.
+- List views must show notes as a normal column or compact notes summary where the listed record supports notes.
+- Full note history must be visible from the individual record detail view.
+
+Rules:
+- Notes must not be used as the only mechanism for changing:
+  - money
+  - payment amount
+  - charge amount
+  - rental state
+  - unit state
+  - delinquency state
+  - meter reading value
+  - system settings
+
+Implementation Rule:
+- Notes use record_type + record_id.
+- Application logic must validate references.
+
+==================================================
+13. AUDIT LOG
+==================================================
+
+Purpose:
+Stores chronological action history.
+
+Audit log is not the primary control mechanism.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+action_type
+- Required
+- Text
+
+record_type
+- Required
+- Text
+
+record_id
+- Required
+- Identifier of affected record
+
+performed_by_account_role
+- Required
+- Allowed values:
+  - operator
+  - admin
+  - dev
+  - system
+
+previous_value
+- Optional
+- Structured text / JSON
+
+new_value
+- Optional
+- Structured text / JSON
+
+created_at
+- Required
+- Timestamp
+
+Validation Rules:
+- Audit logs record who did what, when, and to what record.
+- Audit logs are visible to Admin.
+- Audit logs are not visible to Operator.
+- Audit logs are append-only under normal application behavior.
+- Audit logs must not be edited by Operator.
+- Normal note creation does not create an audit log.
+- Admin note hiding creates an audit log.
+- Admin note restoring creates an audit log.
+
+Rules:
+- Audit logs are action history only.
+- Primary control comes from locked fields, append-only notes, review flags, configurable sensitive action controls, and Admin-only correction workflow.
+
+==================================================
+14. REVIEW FLAG
+==================================================
+
+Purpose:
+Marks sensitive or unusual records/actions for Admin attention.
+
+Review flags are not general audit logs.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+record_type
+- Required
+- Text
+- Supported examples:
+  - charge
+  - payment
+  - rental
+  - unit
+  - system_setting
+  - deposit_credit
+  - admin_correction
+
+record_id
+- Required
+- Identifier of affected record
+
+action_type
+- Required
+- Text
+- Supported examples:
+  - backdated_payment
+  - unit_marked_maintenance
+  - unit_maintenance_too_long
+  - delinquency_override
+  - electricity_rate_change
+  - sensitive_setting_change
+  - deposit_applied
+  - admin_charge_override
+  - admin_charge_void
+  - admin_financial_correction
+  - admin_meter_reading_correction
+  - admin_payment_correction
+
+trigger_source
+- Required
+- Text
+- System rule that created the flag
+
+status
+- Required
+- Allowed values:
+  - pending
+  - reviewed
+  - dismissed
+
+created_at
+- Required
+- Timestamp
+
+reviewed_at
+- Optional
+- Timestamp
+
+Validation Rules:
+- Review flags are created quietly by the system.
+- Review flags are not shown to Operator.
+- Review flags must not be created for every normal action.
+- Only Admin can mark review flags as reviewed or dismissed.
+- Review flags do not store who performed the action.
+- Actor/action history belongs in audit logs.
+- Review flags only mark records/actions for Admin attention.
+
+Removed Fields:
+- review_note
+
+Rules:
+- Admin comments on review flags use the generic Note entity attached to that review flag.
+- If an action requires a reason, the reason belongs on the original business record or Admin Correction record, not the review flag.
+
+==================================================
+15. SYSTEM SETTING
+==================================================
+
+Purpose:
+Stores configurable system and business behavior.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+setting_key
+- Required
+- Unique
+
+setting_value
+- Required
+- Text or structured value
+
+description
+- Optional
+- Text
+
+is_sensitive
+- Required
+- Boolean
+- Default: false
+
+updated_at
+- Required
+- Timestamp
+
+Validation Rules:
+- System settings store configurable system and business behavior.
+- Operator cannot edit system settings.
+- Admin can edit business-facing system settings.
+- Dev can edit system settings for technical maintenance, debugging, deployment, or emergency repair.
+- Sensitive setting changes create review flags.
+- Setting change history belongs in audit logs.
+
+System Setting Examples:
+- grace_period_days
+- minimum_rental_days
+- electricity_rate
+- sensitive_action.backdated_payment
+- sensitive_action.deposit_applied
+- sensitive_action.unit_maintenance_change
+- sensitive_action.delinquency_override
+- review_threshold.unit_maintenance_days
+
+Removed Fields:
+- updated_by_user_id
+- updated_by_account_role
+
+Notes:
+- System setting notes are stored through the generic Note entity.
+
+==================================================
+16. ADMIN CORRECTION
+==================================================
+
+Purpose:
+Stores privileged correction actions performed outside normal Operator workflow.
+
+Admin Correction exists because locked records must not be silently edited, deleted, reversed, or dropped.
+
+Fields:
+
+id
+- Required
+- Primary key
+- System-generated
+
+correction_type
+- Required
+- Text
+- Supported examples:
+  - customer_field_correction
+  - charge_override
+  - charge_void
+  - payment_correction
+  - meter_reading_correction
+  - rental_reopen
+  - rental_early_close_override
+  - delinquency_override
+  - system_setting_correction
+  - deposit_correction
+
+target_record_type
+- Required
+- Text
+- Record type being corrected
+
+target_record_id
+- Required
+- Identifier of record being corrected
+
+reason
+- Required
+- Text
+
+previous_value
+- Optional
+- Structured text / JSON
+
+new_value
+- Optional
+- Structured text / JSON
+
+created_at
+- Required
+- Timestamp
+
+created_by_account_role
+- Required
+- Allowed values:
+  - admin
+  - dev
+  - system
+
+requires_review_flag
+- Required
+- Boolean
+- Default: true for financially sensitive corrections
+
+Validation Rules:
+- Operator cannot create Admin Correction records.
+- Admin corrections require explicit confirmation.
+- Admin corrections create audit log entry.
+- Admin corrections create review flag if financially sensitive.
+- Admin corrections must preserve enough history to show what changed and why.
+- Admin corrections must prefer correction records, status changes, or explicit correction entries over hard deletion.
+
+Rules:
+- Admin Correction is the normal v1 path for serious mistakes.
+- Dev/emergency database repair is outside normal application behavior.
+- Admin Correction notes are stored through the generic Note entity.
+
+==================================================
+17. REMOVED ENTITIES FROM V1
+==================================================
+
+Customer Note:
+- Removed and replaced by generic Note entity.
+
+Rental Customer:
+- Removed because one rental has one responsible customer.
+- Multiple formal customers on one rental are unnecessary complexity for v1.
+
+Payment Allocation:
+- Removed because payment-to-charge matching is unnecessary for v1.
+- Payments reduce rental-level outstanding balance.
+
+Electricity Rate:
+- Removed because electricity rate is global system setting in v1.
+- Charges store electricity_rate_snapshot for historical accuracy.
+
+==================================================
+END OF DOCUMENT
+==================================================

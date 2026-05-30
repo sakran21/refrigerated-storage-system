@@ -1,0 +1,1131 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: State Machines
+VERSION: 0.6.0
+STATUS: Locked State Logic Draft
+
+==================================================
+1. PURPOSE
+==================================================
+
+This document defines how major business records move between states.
+
+This document does not define:
+- database schema
+- API endpoints
+- UI layouts
+- implementation code
+
+This document defines allowed business state transitions for v1.
+
+This document must be used before API and UI implementation so the application does not allow invalid business actions.
+
+==================================================
+2. STATE MACHINE PRINCIPLES
+==================================================
+
+SM-001
+State changes must reflect real business events.
+
+SM-002
+Operator must not silently change sensitive historical records.
+
+SM-003
+Financial records become locked after submission or generation.
+
+SM-004
+Admin Correction workflow handles serious mistakes and privileged changes.
+
+SM-005
+Audit logs record state changes.
+
+SM-006
+Review flags mark sensitive or unusual state changes.
+
+SM-007
+Notes provide context only and do not change state by themselves.
+
+SM-008
+Dev can repair state technically when needed, but this is not normal business workflow.
+
+SM-009
+Preview states do not create saved draft records.
+
+SM-010
+Preview states validate input and show calculated results before final confirmation.
+
+==================================================
+3. UNIT STATE MACHINE
+==================================================
+
+Entity:
+Unit
+
+States:
+- available
+- rented
+- maintenance
+
+Default starting state:
+- available
+
+--------------------------------------------------
+available -> rented
+--------------------------------------------------
+
+Trigger:
+- rental is created for the unit
+
+Allowed by:
+- Operator
+- Admin
+- Dev during technical repair/import/support
+
+Effects:
+- active rental is created
+- initial meter reading is recorded
+- rent amount snapshot is stored
+- first billing period starts
+- first rent charge is generated
+- unit status becomes rented
+
+--------------------------------------------------
+rented -> available
+--------------------------------------------------
+
+Trigger:
+- rental is closed
+- final meter reading is completed
+- final balance is calculated
+- no maintenance restriction exists
+- no delinquency restriction blocks release
+
+Allowed by:
+- Operator, if all closure rules pass
+- Admin, if correction/override is required
+- Dev during technical repair/support
+
+Effects:
+- rental status becomes closed
+- unit becomes available
+- final charges are generated where applicable
+
+--------------------------------------------------
+available -> maintenance
+--------------------------------------------------
+
+Trigger:
+- unit is marked unavailable for maintenance
+
+Allowed by:
+- Operator
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- unit status becomes maintenance
+- unit cannot be rented
+- audit log created
+- review flag created according to system settings
+
+Sensitive:
+- yes
+
+--------------------------------------------------
+maintenance -> available
+--------------------------------------------------
+
+Trigger:
+- unit is returned from maintenance
+
+Allowed by:
+- Operator
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- unit status becomes available
+- unit can be rented again
+- audit log created
+- review flag created according to system settings
+
+Sensitive:
+- yes
+
+--------------------------------------------------
+rented -> maintenance
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed directly
+
+Reason:
+A rented unit must not be placed into maintenance without resolving or closing the rental first.
+
+Allowed only through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+Effects:
+- audit log created
+- admin correction record created
+- review flag created
+
+Sensitive:
+- yes
+
+==================================================
+4. RENTAL STATE MACHINE
+==================================================
+
+Entity:
+Rental
+
+States:
+- active
+- closed
+
+Important:
+Delinquency is not a rental status.
+Delinquency is a separate state/flag.
+
+Default starting state:
+- active
+
+--------------------------------------------------
+active -> closed
+--------------------------------------------------
+
+Trigger:
+- rental is closed
+
+Allowed by:
+- Operator, if all closure rules pass
+- Admin, if override/correction is required
+- Dev during technical repair/support
+
+Required before closure:
+- final meter reading
+- final charge calculation
+- final balance calculation
+- minimum rental duration satisfied unless Admin override is applied
+
+Effects:
+- rental status becomes closed
+- rental is locked after closure
+- final meter reading is created and locked
+- final electricity charge is generated where applicable
+- unit becomes available unless maintenance/delinquency restriction applies
+- audit log created
+
+--------------------------------------------------
+closed -> active
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed
+
+Allowed only through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+Reason:
+Reopening a rental affects billing, charges, meter readings, reports, unit availability, and historical records.
+
+Effects:
+- rental status becomes active
+- audit log created
+- admin correction record created
+- review flag created if financially sensitive
+
+Sensitive:
+- yes
+
+==================================================
+5. RENTAL DELINQUENCY STATE
+==================================================
+
+Entity:
+Rental
+
+This is separate from rental status.
+
+States:
+- not_delinquent
+- delinquent
+- delinquency_overridden
+
+Default starting state:
+- not_delinquent
+
+--------------------------------------------------
+not_delinquent -> delinquent
+--------------------------------------------------
+
+Trigger:
+- unpaid balance exists
+- due date has passed
+- grace period has expired
+
+Allowed by:
+- system
+
+Effects:
+- rental marked delinquent
+- unit remains unavailable
+- delinquency appears in reports
+- audit log created if implemented for system state changes
+
+--------------------------------------------------
+delinquent -> not_delinquent
+--------------------------------------------------
+
+Trigger:
+- outstanding balance is fully caught up
+
+Allowed by:
+- system
+
+Effects:
+- delinquency cleared
+- delinquency restriction removed
+- audit log created if implemented for system state changes
+
+--------------------------------------------------
+delinquent -> delinquency_overridden
+--------------------------------------------------
+
+Trigger:
+- Admin overrides delinquency restriction
+
+Allowed by:
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- delinquency restriction is overridden
+- unit may become available if other rules allow
+- audit log created
+- review flag created
+- admin correction record created
+
+Sensitive:
+- yes
+
+--------------------------------------------------
+delinquency_overridden -> not_delinquent
+--------------------------------------------------
+
+Trigger:
+- outstanding balance becomes fully caught up
+
+Allowed by:
+- system
+
+Effects:
+- delinquency cleared
+- override no longer needed
+
+==================================================
+6. BILLING PERIOD STATE MACHINE
+==================================================
+
+Entity:
+Billing Period
+
+States:
+- open
+- delinquent
+- closed
+
+Default starting state:
+- open
+
+--------------------------------------------------
+open -> delinquent
+--------------------------------------------------
+
+Trigger:
+- unpaid balance exists
+- due date has passed
+- grace period has expired
+
+Allowed by:
+- system
+
+Effects:
+- billing period marked delinquent
+- rental delinquency state may become delinquent
+
+--------------------------------------------------
+delinquent -> open
+--------------------------------------------------
+
+Trigger:
+- outstanding balance is fully caught up while rental remains active
+
+Allowed by:
+- system
+
+Effects:
+- billing period no longer marked delinquent
+- rental delinquency may clear if no other overdue balance exists
+
+--------------------------------------------------
+open -> closed
+--------------------------------------------------
+
+Trigger:
+- rental is closed and billing period is finalized
+
+Allowed by:
+- system
+- Admin Correction workflow if needed
+- Dev during technical repair/support
+
+Effects:
+- billing period finalized
+- related charges remain historical
+- billing period is no longer part of active billing flow
+
+--------------------------------------------------
+delinquent -> closed
+--------------------------------------------------
+
+Trigger:
+- rental is closed while billing period has unresolved or historically delinquent balance
+- Admin correction/case handling finalizes the period
+
+Allowed by:
+- Admin Correction workflow
+- Dev during technical repair/support
+
+Effects:
+- billing period finalized
+- audit log created
+- admin correction created where applicable
+- review flag created if financially sensitive
+
+Sensitive:
+- yes
+
+==================================================
+7. CHARGE STATE MACHINE
+==================================================
+
+Entity:
+Charge
+
+States:
+- open
+- voided_by_admin
+
+Default starting state:
+- open
+
+--------------------------------------------------
+open -> voided_by_admin
+--------------------------------------------------
+
+Trigger:
+- Admin voids charge
+
+Allowed by:
+- Admin Correction workflow
+- Dev during technical repair/support
+
+Effects:
+- original charge remains stored
+- charge status becomes voided_by_admin
+- audit log created
+- admin correction record created
+- review flag created if financially sensitive
+
+Sensitive:
+- yes
+
+Not allowed:
+- Operator cannot edit charge
+- Operator cannot delete charge
+- Operator cannot override generated charge amount
+- Operator cannot void charge
+
+Charge payment status:
+- Charge does not move to paid or partially_paid in v1.
+- Rental-level balance is the source of truth for amount owed.
+- Payment allocation is out of scope for v1.
+
+==================================================
+8. PAYMENT STATE MACHINE
+==================================================
+
+Entity:
+Payment
+
+Conceptual states:
+- entry
+- preview
+- submitted_locked
+
+Stored state:
+- locked boolean after submission
+
+--------------------------------------------------
+entry -> preview
+--------------------------------------------------
+
+Trigger:
+- Operator enters payment details and continues to review
+
+Allowed by:
+- Operator
+- Admin
+- Dev during technical support/testing
+
+Preview must show:
+- rental/unit
+- customer
+- amount
+- payment date
+- notes if entered
+- entered_at preview
+- backdated status
+- resulting balance preview
+
+Effects:
+- no database record created
+
+--------------------------------------------------
+preview -> submitted_locked
+--------------------------------------------------
+
+Trigger:
+- user confirms payment submission
+
+Allowed by:
+- Operator
+- Admin
+- Dev during technical support/testing
+
+Effects:
+- payment record created
+- payment locked
+- balance recalculated
+- audit log created
+- backdated review flag created if payment_date is earlier than entered_at date
+
+--------------------------------------------------
+submitted_locked -> edited
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed
+
+Handled through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+--------------------------------------------------
+submitted_locked -> deleted
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed
+
+Handled through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+--------------------------------------------------
+submitted_locked -> reversed
+--------------------------------------------------
+
+Not supported in v1.
+
+Payment mistakes:
+- handled through Admin Correction workflow
+
+==================================================
+9. DEPOSIT CREDIT STATE MACHINE
+==================================================
+
+Entity:
+Deposit Credit
+
+States:
+- held
+- partially_applied
+- fully_applied
+
+Default starting state:
+- held
+
+--------------------------------------------------
+held -> partially_applied
+--------------------------------------------------
+
+Trigger:
+- some deposit is applied to outstanding balance
+
+Allowed by:
+- Operator if system setting allows
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- applied_amount increases
+- remaining_amount decreases
+- balance recalculated
+- audit log created
+- review flag created according to system settings
+
+Sensitive:
+- yes
+
+--------------------------------------------------
+held -> fully_applied
+--------------------------------------------------
+
+Trigger:
+- full deposit is applied to outstanding balance
+
+Allowed by:
+- Operator if system setting allows
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- applied_amount increases to original_amount
+- remaining_amount becomes zero
+- balance recalculated
+- audit log created
+- review flag created according to system settings
+
+Sensitive:
+- yes
+
+--------------------------------------------------
+partially_applied -> fully_applied
+--------------------------------------------------
+
+Trigger:
+- remaining deposit is applied
+
+Allowed by:
+- Operator if system setting allows
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- remaining deposit becomes zero
+- balance recalculated
+- audit log created
+- review flag created according to system settings
+
+Sensitive:
+- yes
+
+--------------------------------------------------
+partially_applied -> held
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed
+
+Allowed only through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+--------------------------------------------------
+fully_applied -> held
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed
+
+Allowed only through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+Important:
+Deposit refund workflow is out of scope for v1.
+
+==================================================
+10. METER READING STATE MACHINE
+==================================================
+
+Entity:
+Meter Reading
+
+Conceptual states:
+- first_entry
+- second_entry
+- preview
+- submitted_locked
+
+Stored state:
+- locked boolean after submission
+
+--------------------------------------------------
+first_entry -> second_entry
+--------------------------------------------------
+
+Trigger:
+- Operator enters first meter reading value
+
+Allowed by:
+- Operator
+- Admin
+- Dev during technical support/testing
+
+Effects:
+- no database record created
+
+--------------------------------------------------
+second_entry -> preview
+--------------------------------------------------
+
+Trigger:
+- Operator enters second meter reading value
+- second value matches first value
+
+Allowed by:
+- system
+
+Effects:
+- preview is displayed
+- no database record created
+
+If values do not match:
+- submission cannot continue
+- Operator must re-enter values
+
+--------------------------------------------------
+preview -> submitted_locked
+--------------------------------------------------
+
+Trigger:
+- user confirms preview screen
+
+Allowed by:
+- Operator
+- Admin
+- Dev during technical support/testing
+
+Preview must show:
+- unit
+- rental
+- customer
+- billing period, if applicable
+- reading type
+- reading value
+- reading date
+- previous reading
+- usage preview when applicable
+
+Effects:
+- meter reading record created
+- reading locked
+- audit log created
+- electricity usage calculated where applicable
+- electricity charge generated where applicable
+
+--------------------------------------------------
+submitted_locked -> edited
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed
+
+Handled through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+--------------------------------------------------
+submitted_locked -> deleted
+--------------------------------------------------
+
+Normal Operator flow:
+- not allowed
+
+Handled through:
+- Admin Correction workflow
+- Dev emergency repair/support
+
+==================================================
+11. BILLING / CHARGE GENERATION FLOW
+==================================================
+
+Entity:
+Billing Period / Charge Generation
+
+Conceptual states:
+- eligible
+- preview
+- generated_locked
+
+--------------------------------------------------
+eligible -> preview
+--------------------------------------------------
+
+Trigger:
+- Operator, Admin, or Dev opens billing generation preview
+
+Allowed by:
+- Operator
+- Admin
+- Dev
+
+Effects:
+- system identifies eligible rentals and billing periods
+- system calculates charges
+- no database record created
+
+Preview must show:
+- eligible rentals
+- billing periods to create
+- rent charges to generate
+- skipped rentals with reasons
+- calculated charge values
+
+--------------------------------------------------
+preview -> generated_locked
+--------------------------------------------------
+
+Trigger:
+- user confirms generation
+
+Allowed by:
+- Operator
+- Admin
+- Dev
+
+Effects:
+- eligible billing periods are created
+- eligible rent charges are generated
+- generated charges are locked
+- audit logs created
+
+Rules:
+- Operator can trigger charge generation.
+- Operator cannot edit generated charge values.
+- Generated charge values are calculated by the system.
+
+==================================================
+12. REVIEW FLAG STATE MACHINE
+==================================================
+
+Entity:
+Review Flag
+
+States:
+- pending
+- reviewed
+- dismissed
+
+Default starting state:
+- pending
+
+--------------------------------------------------
+pending -> reviewed
+--------------------------------------------------
+
+Trigger:
+- Admin reviews flag and marks it reviewed
+
+Allowed by:
+- Admin
+- Dev during technical support/testing
+
+Effects:
+- status becomes reviewed
+- reviewed_at populated
+- optional note may be added through generic notes system
+- audit log created
+
+--------------------------------------------------
+pending -> dismissed
+--------------------------------------------------
+
+Trigger:
+- Admin decides no action is needed
+
+Allowed by:
+- Admin
+- Dev during technical support/testing
+
+Effects:
+- status becomes dismissed
+- reviewed_at populated
+- optional note may be added through generic notes system
+- audit log created
+
+--------------------------------------------------
+reviewed -> pending
+--------------------------------------------------
+
+Normal flow:
+- not allowed
+
+--------------------------------------------------
+dismissed -> pending
+--------------------------------------------------
+
+Normal flow:
+- not allowed
+
+Design Rule:
+Review flags are not shown to Operator.
+
+==================================================
+13. ADMIN CORRECTION STATE MACHINE
+==================================================
+
+Entity:
+Admin Correction
+
+States:
+- recorded
+- applied
+- failed
+
+Default saved state:
+- recorded
+
+--------------------------------------------------
+preview -> recorded
+--------------------------------------------------
+
+Trigger:
+- Admin reviews correction preview and confirms
+
+Allowed by:
+- Admin
+- Dev during technical repair/support
+
+Required:
+- correction type
+- target record type
+- target record id
+- reason
+- previous value where practical
+- new value where practical
+
+Effects:
+- admin correction record created
+- audit log created
+- review flag created if financially sensitive
+
+--------------------------------------------------
+recorded -> applied
+--------------------------------------------------
+
+Trigger:
+- correction successfully changes target record or records intended correction state
+
+Allowed by:
+- system
+
+Effects:
+- correction result is stored
+- target record reflects correction or status change
+
+--------------------------------------------------
+recorded -> failed
+--------------------------------------------------
+
+Trigger:
+- correction cannot be applied due to validation or system error
+
+Allowed by:
+- system
+
+Effects:
+- failure state is stored
+- error is visible to Admin
+- audit trail remains clear
+
+Rules:
+- serious corrections are not silent
+- corrections require reason
+- corrections create history
+- Operator cannot perform corrections
+
+==================================================
+14. SYSTEM SETTING STATE MACHINE
+==================================================
+
+Entity:
+System Setting
+
+Conceptual states:
+- active
+- changed
+
+Stored state:
+- current setting row/value
+
+--------------------------------------------------
+active -> changed
+--------------------------------------------------
+
+Trigger:
+- Admin or Dev changes setting value
+
+Allowed by:
+- Admin for business-facing settings
+- Dev for technical maintenance/debugging/deployment/emergency repair
+
+Effects:
+- setting value updated
+- audit log created
+- review flag created if setting is sensitive
+
+Not allowed:
+- Operator cannot edit system settings
+
+Sensitive examples:
+- electricity_rate
+- grace_period_days
+- minimum_rental_days
+- sensitive action behavior
+- review thresholds
+
+==================================================
+15. NOTE STATE MACHINE
+==================================================
+
+Entity:
+Note
+
+States:
+- visible
+- hidden_by_admin
+
+Default starting state:
+- visible
+
+--------------------------------------------------
+visible -> hidden_by_admin
+--------------------------------------------------
+
+Trigger:
+- Admin hides note
+
+Allowed by:
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- is_hidden_by_admin = true
+- admin_hide_note required
+- audit log created
+
+--------------------------------------------------
+hidden_by_admin -> visible
+--------------------------------------------------
+
+Trigger:
+- Admin restores note
+
+Allowed by:
+- Admin
+- Dev during technical repair/support
+
+Effects:
+- is_hidden_by_admin = false
+- audit log created
+
+Not allowed:
+- Operator cannot edit note
+- Operator cannot delete note
+- Operator cannot hide note
+
+Important:
+Notes do not change business state.
+
+==================================================
+16. AUDIT LOG STATE MACHINE
+==================================================
+
+Entity:
+Audit Log
+
+States:
+- recorded
+
+Default state:
+- recorded
+
+Allowed transitions:
+- none under normal application behavior
+
+Rules:
+- audit logs are append-only
+- Operator cannot edit audit logs
+- Operator cannot delete audit logs
+- Operator cannot view audit logs
+- Admin reviews audit logs
+- Dev may access audit logs for technical maintenance/debugging/support
+
+==================================================
+17. STATE LOGIC SUMMARY
+==================================================
+
+Operator can normally:
+- create customers
+- append notes
+- create rentals
+- record payments
+- record meter readings
+- trigger billing/charge generation
+- place units into maintenance
+- return units from maintenance
+- close rentals when all rules pass
+- view operational reports
+
+Operator cannot normally:
+- edit locked customer fields
+- edit/delete notes
+- edit/delete/reverse payments
+- edit/delete meter readings
+- override generated charges
+- void charges
+- reopen rentals
+- edit system settings
+- perform admin corrections
+- view review flags
+- view audit logs
+- view oversight financial reports
+
+Admin can:
+- review flags
+- view audit logs
+- manage settings
+- perform correction workflows
+- override delinquency restrictions
+- void/override charges
+- correct serious mistakes
+- hide/manage notes
+- view oversight and financial reports
+
+Dev can:
+- access all endpoints/screens for technical support
+- maintain system
+- deploy updates
+- debug issues
+- perform emergency repair
+- access technical infrastructure
+- support production recovery when needed
+
+System can:
+- generate rent charges
+- calculate electricity charges
+- calculate balances
+- calculate delinquency
+- create audit logs
+- create review flags
+- update derived statuses
+
+==================================================
+END OF DOCUMENT
+==================================================

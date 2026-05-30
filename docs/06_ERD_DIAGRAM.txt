@@ -1,0 +1,783 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: ERD Diagram
+VERSION: 0.6.0
+STATUS: Locked ERD Draft
+
+==================================================
+
+1. PURPOSE
+   ==================================================
+
+This ERD is a visual companion to 05_SCHEMA_DRAFT.txt.
+
+It exists to review whether the system relationships match the approved business rules before implementation.
+
+This version includes:
+
+* role-based accounts
+* one responsible customer per rental
+* generic notes table
+* admin corrections table
+* audit logs
+* review flags
+* simplified v1 financial model
+* rental-level balance calculation
+* global electricity rate through system settings
+* no payment allocations
+* no electricity rates table
+* no rental customers table
+* no payment reversal workflow
+
+==================================================
+2. MERMAID ERD
+==============
+
+```mermaid
+erDiagram
+
+    ACCOUNTS ||--o{ CUSTOMERS : creates
+    ACCOUNTS ||--o{ UNITS : creates
+    ACCOUNTS ||--o{ RENTALS : creates
+    ACCOUNTS ||--o{ PAYMENTS : records
+    ACCOUNTS ||--o{ METER_READINGS : records
+    ACCOUNTS ||--o{ NOTES : creates
+    ACCOUNTS ||--o{ AUDIT_LOGS : performs
+    ACCOUNTS ||--o{ ADMIN_CORRECTIONS : creates
+
+    CUSTOMERS ||--o{ RENTALS : responsible_for
+
+    UNITS ||--o{ RENTALS : rented_through
+
+    RENTALS ||--o{ BILLING_PERIODS : has
+    RENTALS ||--o{ CHARGES : has
+    RENTALS ||--o{ PAYMENTS : receives
+    RENTALS ||--o{ DEPOSIT_CREDITS : has
+    RENTALS ||--o{ METER_READINGS : has
+
+    BILLING_PERIODS ||--o{ CHARGES : contains
+    BILLING_PERIODS ||--o{ METER_READINGS : has
+
+    NOTES }o..|| CUSTOMERS : can_attach_to
+    NOTES }o..|| UNITS : can_attach_to
+    NOTES }o..|| RENTALS : can_attach_to
+    NOTES }o..|| BILLING_PERIODS : can_attach_to
+    NOTES }o..|| CHARGES : can_attach_to
+    NOTES }o..|| PAYMENTS : can_attach_to
+    NOTES }o..|| DEPOSIT_CREDITS : can_attach_to
+    NOTES }o..|| METER_READINGS : can_attach_to
+    NOTES }o..|| AUDIT_LOGS : can_attach_to
+    NOTES }o..|| REVIEW_FLAGS : can_attach_to
+    NOTES }o..|| SYSTEM_SETTINGS : can_attach_to
+    NOTES }o..|| ADMIN_CORRECTIONS : can_attach_to
+
+    ADMIN_CORRECTIONS }o..|| CUSTOMERS : may_correct
+    ADMIN_CORRECTIONS }o..|| UNITS : may_correct
+    ADMIN_CORRECTIONS }o..|| RENTALS : may_correct
+    ADMIN_CORRECTIONS }o..|| BILLING_PERIODS : may_correct
+    ADMIN_CORRECTIONS }o..|| CHARGES : may_correct
+    ADMIN_CORRECTIONS }o..|| PAYMENTS : may_correct
+    ADMIN_CORRECTIONS }o..|| DEPOSIT_CREDITS : may_correct
+    ADMIN_CORRECTIONS }o..|| METER_READINGS : may_correct
+    ADMIN_CORRECTIONS }o..|| SYSTEM_SETTINGS : may_correct
+
+    REVIEW_FLAGS }o..|| ADMIN_CORRECTIONS : may_reference
+    REVIEW_FLAGS }o..|| AUDIT_LOGS : related_action_optional
+
+    ACCOUNTS {
+        int id PK
+        string username
+        string password_hash
+        string role
+        bool is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    CUSTOMERS {
+        int id PK
+        string full_name
+        string phone_number
+        string id_type
+        string id_number
+        string emergency_contact_name
+        string emergency_contact_phone
+        bool is_active
+        datetime created_at
+        datetime updated_at
+        string created_by_account_role
+    }
+
+    UNITS {
+        int id PK
+        string unit_code
+        string status
+        string description
+        string location_note
+        decimal base_rent_amount
+        bool is_active
+        datetime created_at
+        datetime updated_at
+        string created_by_account_role
+        string updated_by_account_role
+    }
+
+    RENTALS {
+        int id PK
+        int unit_id FK
+        int customer_id FK
+        string status
+        bool is_delinquent
+        bool delinquency_restriction_overridden
+        string delinquency_override_note
+        date start_date
+        date end_date
+        date minimum_end_date
+        int billing_anchor_day
+        decimal rent_amount_snapshot
+        decimal deposit_amount
+        bool locked_after_closure
+        datetime created_at
+        datetime updated_at
+        string created_by_account_role
+        string closed_by_account_role
+    }
+
+    BILLING_PERIODS {
+        int id PK
+        int rental_id FK
+        date period_start_date
+        date period_end_date
+        date due_date
+        date grace_period_end_date
+        string status
+        bool rent_charge_generated
+        bool electricity_charge_generated
+        datetime created_at
+        datetime updated_at
+    }
+
+    CHARGES {
+        int id PK
+        int rental_id FK
+        int billing_period_id FK
+        string charge_type
+        decimal amount
+        string description
+        string status
+        bool is_overridden
+        string override_note
+        decimal electricity_rate_snapshot
+        bool locked
+        datetime created_at
+        string created_by_account_role
+    }
+
+    PAYMENTS {
+        int id PK
+        int rental_id FK
+        decimal amount
+        date payment_date
+        datetime entered_at
+        bool is_backdated
+        bool locked
+        string created_by_account_role
+    }
+
+    DEPOSIT_CREDITS {
+        int id PK
+        int rental_id FK
+        decimal original_amount
+        decimal remaining_amount
+        decimal applied_amount
+        string status
+        string application_note
+        datetime created_at
+        string created_by_account_role
+    }
+
+    METER_READINGS {
+        int id PK
+        int rental_id FK
+        int billing_period_id FK
+        string reading_type
+        decimal reading_value
+        date reading_date
+        bool locked
+        datetime created_at
+        string created_by_account_role
+    }
+
+    NOTES {
+        int id PK
+        string record_type
+        int record_id
+        string note_text
+        datetime created_at
+        string created_by_account_role
+        bool is_hidden_by_admin
+        string admin_hide_note
+    }
+
+    AUDIT_LOGS {
+        int id PK
+        string action_type
+        string record_type
+        int record_id
+        string performed_by_account_role
+        json previous_value
+        json new_value
+        datetime created_at
+    }
+
+    REVIEW_FLAGS {
+        int id PK
+        string record_type
+        int record_id
+        string action_type
+        string trigger_source
+        string status
+        datetime created_at
+        datetime reviewed_at
+    }
+
+    SYSTEM_SETTINGS {
+        int id PK
+        string setting_key
+        string setting_value
+        string description
+        bool is_sensitive
+        datetime updated_at
+    }
+
+    ADMIN_CORRECTIONS {
+        int id PK
+        string correction_type
+        string target_record_type
+        int target_record_id
+        string reason
+        json previous_value
+        json new_value
+        datetime created_at
+        string created_by_account_role
+        bool requires_review_flag
+    }
+```
+
+==================================================
+3. RELATIONSHIP SUMMARY
+=======================
+
+ACCOUNT RELATIONSHIPS
+
+Accounts are role-based access records.
+
+V1 roles:
+
+* Operator
+* Admin
+* Dev
+
+Accounts are not employee profiles.
+
+Account role fields exist for role-level action tracking, not individual employee accountability.
+
+Dev has full technical access when needed for:
+
+* deployment
+* debugging
+* emergency repair
+* production support
+* technical maintenance
+
+Dev is not normal daily business workflow.
+
+==================================================
+CUSTOMER RELATIONSHIPS
+======================
+
+A customer can have many rentals.
+
+Each rental has one responsible customer.
+
+Customer notes are handled by the generic notes table.
+
+Customer corrections are handled through Admin Correction workflow.
+
+Removed:
+
+* customer_notes
+* rental_customers
+
+Reason:
+One notes table is reused across the system.
+One rental has one responsible customer.
+
+==================================================
+UNIT RELATIONSHIPS
+==================
+
+A unit can have many historical rentals.
+
+A unit can only have one active rental at a time.
+
+Unit status:
+
+* available
+* rented
+* maintenance
+
+Maintenance status changes are sensitive actions.
+
+Unit notes are handled by the generic notes table.
+
+Unit corrections are handled through Admin Correction workflow.
+
+==================================================
+RENTAL RELATIONSHIPS
+====================
+
+A rental belongs to:
+
+* one unit
+* one responsible customer
+
+A rental has:
+
+* many billing periods
+* many charges
+* many payments
+* many meter readings
+* deposit credit records
+
+A rental represents one unit rental lifecycle from start to closure.
+
+Rental status:
+
+* active
+* closed
+
+Delinquency is separate from rental status.
+
+Rental notes are handled by the generic notes table.
+
+Rental reopening and early closure override require Admin Correction workflow.
+
+Balance formula:
+
+total charges - total payments - applied deposit = outstanding balance
+
+==================================================
+BILLING RELATIONSHIPS
+=====================
+
+A rental has many billing periods.
+
+A billing period can contain:
+
+* rent charge
+* electricity charge
+* related meter reading
+
+Billing period status:
+
+* open
+* delinquent
+* closed
+
+Rent charge is generated automatically.
+
+Operator can trigger charge generation for eligible rentals and billing periods.
+
+Generated charge values are calculated by the system.
+
+Generated charges are locked after creation.
+
+Operator cannot edit generated charge values.
+
+Electricity charge is generated from meter readings.
+
+Billing period notes are handled by the generic notes table.
+
+Due date is the first day of the billing period.
+
+Each new billing period starts on the same calendar day of the next month where possible.
+
+If the same calendar day does not exist in the next month, the next billing period starts on the last calendar day of that month.
+
+Grace period is seven calendar days.
+
+Day 8 after the due date counts as delinquency-eligible if an outstanding balance remains.
+
+==================================================
+CHARGE RELATIONSHIPS
+====================
+
+Charges belong to:
+
+* rental
+* billing period
+
+Charge types:
+
+* rent
+* electricity
+* adjustment
+
+Charge status:
+
+* open
+* voided_by_admin
+
+Rent charges are generated automatically.
+
+Electricity charges are generated from meter readings.
+
+Electricity charges store electricity_rate_snapshot.
+
+Electricity rate is stored as a global system setting.
+
+Operator can trigger charge generation.
+
+Operator cannot override generated charge amounts.
+
+Charge override is Admin-only.
+
+Charge voiding is Admin-only.
+
+Adjustment charges are Admin-only in v1.
+
+Charge notes are handled by the generic notes table.
+
+Charge overrides and voids require Admin Correction workflow.
+
+Charge edit history lives in:
+
+* admin_corrections
+* audit_logs
+
+Removed:
+
+* electricity_rates table
+* paid charge status
+* partially_paid charge status
+
+Reason:
+Electricity rate is stored as a global system setting in v1.
+Rental-level balance is the source of truth for amount owed.
+Payment allocation is out of scope for v1.
+
+==================================================
+PAYMENT RELATIONSHIPS
+=====================
+
+Payments belong to rentals.
+
+Payments reduce rental-level balance.
+
+Payments are final after creation.
+
+Payments require double confirmation before submission.
+
+Payments keep:
+
+* payment_date
+* entered_at
+
+payment_date records the date cash was received.
+
+entered_at records when the payment was entered into the system.
+
+If payment_date is earlier than entered_at date, the payment is backdated.
+
+Backdated payments are sensitive actions.
+
+Payment notes are handled by the generic notes table.
+
+Payment mistakes require Admin Correction workflow.
+
+Removed:
+
+* payment_allocations
+* payment reversal fields
+* payment_method
+
+Reason:
+The system does not track exactly which payment paid which charge in v1.
+All payments are cash in v1.
+Payment reversal is not supported in v1.
+
+Balance formula:
+
+total charges - total payments - applied deposit = outstanding balance
+
+==================================================
+DEPOSIT RELATIONSHIPS
+=====================
+
+Deposit credit belongs to a rental.
+
+Deposit is:
+
+* refundable security deposit
+* not revenue
+* not automatic first-month payment
+
+Deposit remains held unless manually applied.
+
+Deposit application is sensitive.
+
+No deposit allocation table exists in v1.
+
+Deposit notes are handled by the generic notes table.
+
+Deposit mistakes or privileged corrections require Admin Correction workflow.
+
+Deposit status:
+
+* held
+* partially_applied
+* fully_applied
+
+==================================================
+METER READING RELATIONSHIPS
+===========================
+
+Meter readings belong to rentals.
+
+Periodic meter readings also belong to billing periods.
+
+Reading types:
+
+* initial
+* periodic
+* final
+
+Meter reading submission requires:
+
+* first value entry
+* second value entry
+* both values must match
+* preview confirmation screen
+* final submit
+
+Meter readings are locked after submission.
+
+No photos exist in v1.
+
+No normal Operator correction workflow exists in v1.
+
+Meter reading notes are handled by the generic notes table.
+
+Meter reading mistakes require Admin Correction workflow.
+
+==================================================
+NOTE RELATIONSHIPS
+==================
+
+Notes are stored in one generic table.
+
+Notes can attach to:
+
+* customer
+* unit
+* rental
+* billing_period
+* charge
+* payment
+* deposit_credit
+* meter_reading
+* review_flag
+* audit_log
+* system_setting
+* admin_correction
+
+Notes use:
+
+* record_type
+* record_id
+
+Operator can add notes.
+
+Operator cannot edit notes.
+
+Operator cannot delete notes.
+
+Admin can hide/manage notes.
+
+Notes are context only.
+
+Notes must not be used as the only mechanism for changing:
+
+* money
+* payment amount
+* charge amount
+* rental state
+* unit state
+* delinquency state
+* meter reading value
+* system settings
+
+Because notes use record_type + record_id, application logic must validate references.
+
+==================================================
+AUDIT LOG RELATIONSHIPS
+=======================
+
+Audit logs are action history only.
+
+Audit logs record:
+
+* what happened
+* what record was affected
+* when it happened
+* which role/account performed it
+* previous value where practical
+* new value where practical
+
+Audit logs are not the primary control mechanism.
+
+Audit log notes are handled by the generic notes table.
+
+Operator cannot access audit logs.
+
+Admin and Dev can access audit logs.
+
+==================================================
+REVIEW FLAG RELATIONSHIPS
+=========================
+
+Review flags mark sensitive or unusual actions for Admin attention.
+
+Review flags are not general audit history.
+
+Review flags do not store who performed the action.
+
+Actor/action history belongs in audit logs.
+
+Review flags use:
+
+* record_type
+* record_id
+
+Review flag status:
+
+* pending
+* reviewed
+* dismissed
+
+Review comments use the generic notes table attached to the review flag.
+
+Review flags can reference Admin Correction records when the flagged event is a privileged correction.
+
+Operator cannot access review flags.
+
+Admin and Dev can access review flags.
+
+==================================================
+SYSTEM SETTING RELATIONSHIPS
+============================
+
+System settings store configurable system and business behavior.
+
+Examples:
+
+* grace_period_days
+* minimum_rental_days
+* electricity_rate
+* sensitive_action.backdated_payment
+* sensitive_action.deposit_applied
+* sensitive_action.unit_maintenance_change
+* sensitive_action.delinquency_override
+* review_threshold.unit_maintenance_days
+
+System settings do not store updated_by fields in v1.
+
+Setting change history belongs in audit logs.
+
+System setting notes are handled by the generic notes table.
+
+Sensitive setting corrections are handled through Admin Correction workflow.
+
+Operator cannot edit system settings.
+
+Admin and Dev can edit system settings.
+
+==================================================
+ADMIN CORRECTION RELATIONSHIPS
+==============================
+
+Admin Correction records represent privileged correction actions outside normal Operator workflow.
+
+Admin Correction may target:
+
+* customer
+* unit
+* rental
+* billing_period
+* charge
+* payment
+* deposit_credit
+* meter_reading
+* system_setting
+
+Admin Correction uses:
+
+* target_record_type
+* target_record_id
+
+Admin Correction requires:
+
+* correction type
+* reason
+* previous value where practical
+* new value where practical
+* explicit confirmation
+* audit log entry
+* review flag if financially sensitive
+
+Operator cannot create Admin Correction records.
+
+Admin Correction records must not be hard-deleted.
+
+Admin Correction comments use the generic notes table.
+
+==================================================
+4. REMOVED V1 RELATIONSHIPS
+===========================
+
+Removed:
+
+1. customer_notes
+
+Reason:
+Replaced by generic notes table.
+
+2. rental_customers
+
+Reason:
+One rental has one responsible customer.
+
+3. payment_allocations
+
+Reason:
+Payments reduce rental-level balance.
+
+4. electricity_rates
+
+Reason:
+Electricity rate is global system setting.
+
+5. payment reversal relationships
+
+Reason:
+Payments are final after creation.
+
+6. charge paid / partially_paid relationships
+
+Reason:
+Charge-level payment status is not tracked in v1.
+Rental-level balance is the source of truth.
+
+==================================================
+END OF DOCUMENT
+===============

@@ -1,0 +1,725 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: Business Requirements
+VERSION: 0.4.0
+STATUS: Locked Business Requirements Draft
+
+==================================================
+1. BUSINESS PURPOSE
+==================================================
+
+The system exists to help the business manage refrigerated storage unit rentals with accurate records, clear balances, unit occupancy visibility, electricity tracking, cash payment tracking, and operational oversight.
+
+The main business goal is control.
+
+The business must be able to trust that unit status, charges, payments, balances, delinquency, sensitive actions, corrections, and notes are recorded clearly and cannot be quietly manipulated.
+
+The system replaces paper-based tracking as the primary operational record.
+
+==================================================
+2. PRIMARY BUSINESS PRIORITIES
+==================================================
+
+The system must answer:
+
+- Which units are occupied?
+- Which units are available?
+- Which units are in maintenance?
+- Which customer is responsible for each rental?
+- Who currently owes money?
+- What charges have been generated?
+- What payments have been recorded?
+- What electricity usage has been recorded?
+- Which rentals are delinquent?
+- What sensitive actions happened?
+- What actions require Admin review?
+- What gross cash was received in a calendar month?
+
+==================================================
+3. ROLES
+==================================================
+
+The system has three roles:
+
+- Operator
+- Admin
+- Dev
+
+Operator:
+- Performs daily business operations.
+- Creates customer records.
+- Creates rentals.
+- Records meter readings.
+- Records cash payments.
+- Adds notes to records.
+- Changes unit status when allowed.
+- Triggers eligible billing/charge generation.
+- Performs sensitive operational actions when system settings allow.
+- Cannot edit locked records after creation.
+- Cannot delete financial or historical records.
+- Cannot access Admin oversight tools.
+
+Admin:
+- Performs business oversight.
+- Reviews review flags.
+- Reviews audit history.
+- Edits locked records through correction workflow when necessary.
+- Performs privileged correction actions.
+- Changes system settings.
+- Can configure whether sensitive Operator actions are allowed + flagged or blocked / approval required.
+- Can access financial and oversight reports.
+
+Dev:
+- Performs technical maintenance.
+- Deploys updates.
+- Debugs technical issues.
+- Supports backups, hosting, production fixes, and emergency repair.
+- Has full technical access when needed.
+- Is not normal daily business workflow.
+
+==================================================
+4. DEVICE REQUIREMENTS
+==================================================
+
+Primary device:
+- Android tablet
+- Touch-first interface
+- Chrome browser
+
+Secondary device:
+- Desktop or laptop browser
+
+Not supported:
+- Phone-first layout
+- Offline mode
+- Native mobile app
+- Keyboard-dependent workflow
+
+The system must be usable without requiring a physical keyboard.
+
+==================================================
+5. CORE BUSINESS OBJECTS
+==================================================
+
+The system must support the following business objects:
+
+- Account
+- Customer
+- Storage Unit
+- Rental
+- Billing Period
+- Charge
+- Payment
+- Deposit Credit
+- Meter Reading
+- Note
+- Audit Log
+- Review Flag
+- System Setting
+- Admin Correction
+
+Removed from v1:
+- Customer Notes as a separate entity
+- Rental Customers
+- Payment Allocations
+- Electricity Rates table
+
+==================================================
+6. ACCOUNT RULES
+==================================================
+
+Accounts are simple role-based access accounts, not employee profiles.
+
+For v1, expected accounts are:
+
+- Operator account
+- Admin account
+- Dev account
+
+The purpose of accounts is role separation and system access control, not staff management.
+
+The system must not include:
+- employee profile fields
+- department/team fields
+- complex permission tables
+- contact details
+- workforce management features
+
+==================================================
+7. CUSTOMER RULES
+==================================================
+
+Required customer information:
+
+- Full name
+- Phone number
+- ID type
+- ID number
+- Emergency contact name
+- Emergency contact phone
+
+Individual customers only.
+
+Business customer accounts are out of scope for v1.
+
+A customer can rent multiple units.
+
+Each rental has one responsible customer.
+
+Multiple formal customers on one rental are out of scope for v1.
+
+If additional people are involved in real life, they may be written in notes, but they are not formal system relationships.
+
+Customer records are locked after creation.
+
+Operator can:
+- Create customer record
+- Review customer record before final submit
+- Add new notes
+
+Operator cannot:
+- Edit existing notes
+- Delete notes
+- Edit name
+- Edit phone
+- Edit ID type
+- Edit ID number
+- Edit emergency contact
+
+Admin can edit customer fields through correction workflow when necessary.
+
+Before creating a customer, Operator must see a confirmation/review screen:
+
+“Are you sure you want to add this customer record?”
+
+==================================================
+8. NOTE RULES
+==================================================
+
+The system uses one generic notes system.
+
+Notes are attached to individual records.
+
+Notes may be blank at initial record creation.
+
+Notes can be appended later.
+
+Notes can attach to major records, including:
+- Customer
+- Unit
+- Rental
+- Billing Period
+- Charge
+- Payment
+- Deposit Credit
+- Meter Reading
+- Review Flag
+- Audit Log
+- System Setting
+- Admin Correction
+
+Operator can add notes.
+
+Operator cannot edit previous notes.
+
+Operator cannot delete previous notes.
+
+Admin can hide or manage notes when necessary.
+
+Notes provide human context only.
+
+Notes must not be the only mechanism for changing:
+- money
+- billing
+- payment state
+- rental state
+- delinquency
+- unit status
+- meter readings
+- reporting logic
+- system settings
+
+List views must show notes as a normal column or compact notes summary where applicable.
+
+Full note history must be visible from the individual record detail view.
+
+==================================================
+9. UNIT RULES
+==================================================
+
+Each unit has one operational status:
+
+- Available
+- Rented
+- Maintenance
+
+A unit cannot be double-booked.
+
+A unit in maintenance cannot be rented.
+
+A rented unit is unavailable.
+
+A delinquent unit remains unavailable unless:
+- The outstanding balance is fully resolved
+OR
+- Admin performs an override.
+
+Unit status changes must be recorded.
+
+Unit maintenance changes are sensitive actions and create review flags according to system settings.
+
+==================================================
+10. RENTAL RULES
+==================================================
+
+Rentals are unit-centric.
+
+One rental represents one unit rental lifecycle from start to closure.
+
+A rental has:
+- one responsible customer
+- one unit
+- one start date
+- one billing cycle
+- its own charges
+- its own meter readings
+- its own delinquency state
+- its own closure date
+
+If a customer rents multiple units, each unit receives its own rental record.
+
+A rental automatically renews until manually closed.
+
+Minimum rental charge is 30 days.
+
+A unit cannot be rented to a new customer before the existing rental is closed.
+
+Reservations are out of scope for v1.
+
+Rental status values:
+- Active
+- Closed
+
+Delinquency is separate from rental status.
+
+==================================================
+11. BILLING RULES
+==================================================
+
+Billing period starts on the rental start date.
+
+The next billing period starts on the same calendar day of the next month where possible.
+
+If the same calendar day does not exist in the next month, the next billing period starts on the last calendar day of that month.
+
+Due date is the first day of the new billing period.
+
+Grace period is 7 days.
+
+Day 8 after the due date counts as delinquent if an outstanding balance remains.
+
+Partial payment reduces the amount owed but does not clear delinquency unless the balance is fully caught up.
+
+Billing period status values:
+- Open
+- Delinquent
+- Closed
+
+Rent charges generate automatically at the start of each billing period.
+
+Operator can trigger charge generation for eligible rentals and billing periods.
+
+Generated charge values are calculated by the system and locked after creation.
+
+Operator cannot edit generated charge values.
+
+==================================================
+12. CHARGE RULES
+==================================================
+
+Charges are amounts the customer owes.
+
+Charge types:
+- Rent
+- Electricity
+- Adjustment
+
+Charge status values:
+- Open
+- Voided_by_admin
+
+Rent charges generate automatically per billing period.
+
+Electricity charges generate from meter readings.
+
+Electricity rate is stored as a global system setting in v1.
+
+Electricity charges store an electricity_rate_snapshot so historical charges remain accurate if the global rate changes later.
+
+Charges are separate from payments.
+
+Charges are locked after creation/generation.
+
+Operator cannot edit or delete charges after creation.
+
+Operator cannot override generated charge amounts.
+
+Charge override is Admin-only.
+
+Charge override is a sensitive action.
+
+Charge voiding is Admin-only.
+
+Charge voiding must preserve history by changing the charge status to Voided_by_admin.
+
+Charges must not be silently deleted.
+
+Adjustment charges are Admin-only in v1.
+
+Charge edit history lives in:
+- Admin Corrections
+- Audit Logs
+
+==================================================
+13. PAYMENT RULES
+==================================================
+
+Payments are cash-only records.
+
+The system records payments but does not process money.
+
+payment_method is out of scope for v1 because all payments are cash.
+
+Multiple partial payments are allowed.
+
+Payments reduce the rental’s overall outstanding balance.
+
+Payments are final after creation.
+
+Operator cannot:
+- edit payment
+- delete payment
+- reverse payment
+
+Payment entry requires double confirmation before submission.
+
+Payment confirmation must clearly show:
+- rental/unit
+- customer
+- amount
+- payment date
+- notes, if any
+
+Once recorded, payment becomes locked.
+
+If a payment mistake occurs, it must be handled through Admin correction workflow.
+
+No payment reversal workflow exists in v1.
+
+Payment allocations are removed from v1.
+
+The system does not track exactly which payment paid which charge.
+
+Balance is calculated at the rental level:
+
+total charges - total payments - applied deposit = outstanding balance
+
+==================================================
+14. DEPOSIT RULES
+==================================================
+
+Deposit is a refundable security deposit.
+
+Deposit is not revenue.
+
+Deposit is not an automatic first-month payment.
+
+Deposit remains held during the rental unless manually applied to unpaid charges.
+
+Deposit application is a sensitive action.
+
+Deposit application behavior is controlled by system settings:
+- allowed + flagged
+OR
+- blocked / approval required
+
+If deposit is applied, it must be traceable and indicate the balance impact.
+
+Deposit application requires an application note.
+
+If the customer paid everything normally, the deposit remains available to return outside the system or through a later Admin-controlled workflow.
+
+Deposit refund handling is not a default v1 workflow.
+
+==================================================
+15. ELECTRICITY RULES
+==================================================
+
+Meter readings are required:
+- At rental start
+- At each billing period
+- At rental closure
+
+Meter reading submission requires:
+- first value entry
+- second value entry
+- both values must match
+- preview confirmation screen
+- final submit
+
+Electricity usage is calculated from:
+
+new reading - previous reading
+
+Electricity charge is calculated from usage and the global electricity rate stored in system settings.
+
+When an electricity charge is generated, the charge stores electricity_rate_snapshot.
+
+No electricity_rates table exists in v1.
+
+No photo requirement exists in v1.
+
+No normal Operator correction workflow exists in v1.
+
+Meter readings must be reviewed in the UI before submission.
+
+Once submitted, meter readings are locked and cannot be edited by Operator.
+
+Meter reading mistakes require Admin correction workflow.
+
+==================================================
+16. SENSITIVE ACTION CONTROL RULES
+==================================================
+
+Sensitive Operator actions are allowed by default but quietly flagged for Admin review unless system settings block or require approval for that action.
+
+The system must support configurable control settings so each sensitive action can be changed from:
+
+- allowed + flagged
+
+to:
+
+- blocked / approval required
+
+This allows the business to start with operational flexibility, then tighten controls if abuse or risk appears.
+
+Examples of sensitive actions:
+- Backdated payment entered
+- Unit marked maintenance
+- Unit kept in maintenance too long
+- Delinquency restriction overridden
+- Deposit applied
+
+Examples of Admin-sensitive actions:
+- Charge overridden
+- Charge voided
+- Electricity rate changed
+- Sensitive system setting changed
+- Admin financial correction
+- Admin payment correction
+- Admin meter reading correction
+
+==================================================
+17. AUDIT LOG RULES
+==================================================
+
+Audit logs are action history only.
+
+They record:
+- who did the action
+- what action happened
+- when it happened
+- what record was affected
+- previous value where practical
+- new value where practical
+
+Audit logs are not the primary control mechanism.
+
+Primary control comes from:
+- locked fields
+- append-only notes
+- review flags
+- configurable allowed/blocked settings for sensitive actions
+- Admin-only correction workflow
+
+Audit logs are visible to Admin and Dev.
+
+Audit logs are not visible to Operator.
+
+Audit logs are append-only under normal application behavior.
+
+Normal note creation does not create an audit log.
+
+Admin note hiding or restoring creates an audit log.
+
+==================================================
+18. REVIEW FLAG RULES
+==================================================
+
+Review flags are high-signal Admin review markers, not general audit history.
+
+Review flags are created when a sensitive or unusual action happens.
+
+Review flags are created quietly by the system and are not shown to Operator.
+
+Review flags must not be created for every normal action.
+
+Review flag statuses:
+- Pending
+- Reviewed
+- Dismissed
+
+Only Admin can mark review flags as reviewed or dismissed.
+
+Review flags do not store who performed the action.
+
+Actor/action history belongs in the audit log.
+
+Review flags only mark records/actions for Admin attention.
+
+Admin comments on review flags use the generic notes system.
+
+==================================================
+19. SYSTEM SETTING RULES
+==================================================
+
+System settings store configurable business rules and system behavior.
+
+System settings control:
+- grace period days
+- minimum rental days
+- electricity rate
+- sensitive action behavior
+- review flag thresholds
+
+Sensitive action behavior is configurable per action:
+- allowed + flagged
+OR
+- blocked / approval required
+
+System settings do not need updated_by fields in v1.
+
+Setting change history belongs in audit logs.
+
+Sensitive setting changes create review flags.
+
+Operator cannot edit system settings.
+
+Admin and Dev can edit system settings.
+
+==================================================
+20. ADMIN CORRECTION RULES
+==================================================
+
+Operator cannot delete, reverse, or drop financial records after submission.
+
+Locked records include:
+- payments
+- charges
+- meter readings
+- billing periods
+- rentals after closure
+
+If a serious mistake must be corrected, it requires Admin correction workflow.
+
+Admin corrections must:
+- be unavailable to Operator
+- require explicit confirmation
+- require a reason
+- create an audit log entry
+- create a review flag if financially sensitive
+- preserve enough history to show what changed and why
+
+Admin correction must not silently erase business history.
+
+This prevents ordinary Operator access from making money, charges, or history disappear.
+
+==================================================
+21. REPORTING RULES
+==================================================
+
+Reports are calendar-month based.
+
+Gross revenue means cash received during that calendar month.
+
+Reports must separate:
+- Rent charges
+- Electricity charges
+- Total payments received
+- Outstanding balances
+
+Deposits are not revenue.
+
+Operator can access operational reports only.
+
+Operator-accessible reports:
+- Occupancy report
+- Delinquency report
+
+Admin and Dev can access oversight and financial reports.
+
+Admin/Dev reports include:
+- Monthly gross cash received
+- Occupied units
+- Available units
+- Maintenance units
+- Delinquent rentals
+- Sensitive actions
+- Review flags
+- Admin corrections
+- Charge summaries
+- Cash received summaries
+
+==================================================
+22. OUT OF SCOPE
+==================================================
+
+The system does not handle:
+
+- Tax calculation
+- Receipts
+- Payment processing
+- Accounting software integration
+- Offline operation
+- Customer-facing portal
+- Phone-first mobile layout
+- Native mobile app
+- Photo storage
+- Reservation system
+- Business customer accounts
+- Multiple formal customers per rental
+- Rental_Customers table
+- Payment allocations
+- Payment reversal workflow
+- Electricity rates table
+- Normal Operator meter reading correction workflow
+- Default deposit refund workflow
+- Operator charge override
+- Operator financial correction
+- Operator audit log access
+- Operator review flag access
+- Operator system setting access
+
+==================================================
+23. SUCCESS CRITERIA
+==================================================
+
+The system is successful if the business can:
+
+- See current unit occupancy
+- See customer balances
+- Record cash payments
+- Generate rent charges automatically
+- Trigger eligible charge generation
+- Track electricity charges
+- Identify delinquency
+- Preserve locked records after creation
+- Prevent Operator edits to sensitive records
+- Review sensitive actions without noisy alert overload
+- Produce monthly cash-received reports
+- Operate without paper as the primary record
+- Preserve action history for meaningful business and data changes
+- Prevent silent alteration or deletion of important operational records
+
+==================================================
+END OF DOCUMENT
+==================================================

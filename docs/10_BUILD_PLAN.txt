@@ -1,0 +1,988 @@
+Copy-paste as:
+
+`10_BUILD_PLAN.txt`
+
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: Build Plan
+VERSION: 0.1.0
+STATUS: Locked Build Plan Draft
+
+==================================================
+
+1. PURPOSE
+   ==================================================
+
+This document defines the implementation plan for the Refrigerated Storage Unit Rental System.
+
+This document defines:
+
+* build strategy
+* implementation phases
+* vertical slice order
+* backend/frontend/database sequencing
+* testing checkpoints
+* deployment checkpoints
+* completion criteria for each phase
+
+==================================================
+2. BUILD STRATEGY
+=================
+
+The project will be built using vertical slices.
+
+A vertical slice means one workflow is implemented across:
+
+* database
+* backend API
+* business logic
+* frontend UI
+* validation
+* role access
+* notes behavior where applicable
+* tests where applicable
+
+The project will not be built as one large backend phase followed by one large frontend phase.
+
+Each completed slice must produce usable application behavior.
+
+==================================================
+3. IMPLEMENTATION PRINCIPLES
+============================
+
+BP-001
+Each phase must produce working software behavior.
+
+BP-002
+Database schema, backend API, and frontend UI must remain aligned.
+
+BP-003
+Business rules must be implemented in backend logic, not only in frontend validation.
+
+BP-004
+Frontend validation may improve user experience but must not replace backend validation.
+
+BP-005
+Locked records must be enforced by backend logic.
+
+BP-006
+Role restrictions must be enforced by backend authorization.
+
+BP-007
+Financial and historical records must not be silently deleted.
+
+BP-008
+Preview workflows must not save draft records.
+
+BP-009
+Submission workflows must require confirmation where specified.
+
+BP-010
+Demo seed data must use fake records only.
+
+BP-011
+Production secrets must never be committed to GitHub.
+
+==================================================
+4. HIGH-LEVEL BUILD PHASES
+==========================
+
+Phase 0:
+Project setup
+
+Phase 1:
+Backend foundation
+
+Phase 2:
+Frontend foundation
+
+Phase 3:
+Customer and unit workflows
+
+Phase 4:
+Rental creation workflow
+
+Phase 5:
+Billing period and rent charge generation
+
+Phase 6:
+Payment workflow
+
+Phase 7:
+Meter reading and electricity charge workflow
+
+Phase 8:
+Deposit credit workflow
+
+Phase 9:
+Notes system
+
+Phase 10:
+Audit logs, review flags, and system settings
+
+Phase 11:
+Admin correction workflow
+
+Phase 12:
+Reports and dashboards
+
+Phase 13:
+Seed data and demo workflows
+
+Phase 14:
+Deployment
+
+Phase 15:
+Production hardening and final review
+
+==================================================
+5. PHASE 0 - PROJECT SETUP
+==========================
+
+Goal:
+Create the project structure and development foundation.
+
+Tasks:
+
+* Create GitHub monorepo
+* Create backend ASP.NET Core Web API project
+* Create frontend React + TypeScript + Vite project
+* Add root README
+* Add project documentation folder
+* Add .gitignore
+* Add .env.example files
+* Add local development instructions
+* Confirm local .NET version
+* Confirm Node/npm installation
+* Confirm PostgreSQL local setup
+* Confirm GitHub remote
+
+Expected structure:
+
+/docs
+/backend
+/frontend
+/README.md
+/.gitignore
+
+Completion criteria:
+
+* Repository exists
+* Backend runs locally
+* Frontend runs locally
+* Project can be pushed to GitHub
+* No secrets are committed
+
+==================================================
+6. PHASE 1 - BACKEND FOUNDATION
+===============================
+
+Goal:
+Create the backend base needed for all later workflows.
+
+Tasks:
+
+* Configure ASP.NET Core Web API
+* Configure PostgreSQL connection
+* Configure Entity Framework Core
+* Configure database context
+* Add initial migration setup
+* Add health endpoint
+* Add environment configuration
+* Add basic error handling
+* Add CORS configuration for frontend
+* Add authentication foundation
+* Add role-based authorization policies
+
+Core backend features:
+
+* database connection
+* migrations
+* health check
+* cookie authentication setup
+* role authorization setup
+
+Completion criteria:
+
+* Backend connects to PostgreSQL
+* Database migration can run
+* Health endpoint works
+* Backend can be started locally
+* Backend configuration uses environment variables
+
+==================================================
+7. PHASE 2 - FRONTEND FOUNDATION
+================================
+
+Goal:
+Create the frontend base needed for tablet-first workflows.
+
+Tasks:
+
+* Configure React + TypeScript + Vite
+* Configure frontend routing
+* Configure API client
+* Configure login state handling
+* Create base layout
+* Create dashboard tile layout
+* Create reusable table/list component
+* Create reusable detail view pattern
+* Create reusable modal/confirmation pattern
+* Create reusable form validation display
+
+Core frontend features:
+
+* login page shell
+* dashboard shell
+* route protection
+* API connection setup
+* tablet-first layout foundation
+
+Completion criteria:
+
+* Frontend runs locally
+* Frontend can call backend health endpoint
+* Basic routing works
+* Layout supports tablet and desktop browser widths
+
+==================================================
+8. PHASE 3 - AUTH AND ACCOUNTS
+==============================
+
+Goal:
+Implement role-based login and session behavior.
+
+Backend tasks:
+
+* Create accounts table/model
+* Add account seed data for local development
+* Implement login endpoint
+* Implement logout endpoint
+* Implement current account endpoint
+* Implement inactive account blocking
+* Implement password hashing
+* Implement role authorization
+
+Frontend tasks:
+
+* Build login screen
+* Build logout behavior
+* Build current session check
+* Route users to correct dashboard after login
+* Hide unauthorized navigation items
+
+Completion criteria:
+
+* Operator can log in
+* Admin can log in
+* Dev can log in
+* Inactive accounts cannot log in
+* Role-based route restrictions work
+* Persistent browser session works locally
+
+==================================================
+9. PHASE 4 - CUSTOMER WORKFLOW
+==============================
+
+Goal:
+Implement customer creation, listing, detail view, and locked-record behavior.
+
+Backend tasks:
+
+* Create customers table/model
+* Add customer list endpoint
+* Add customer detail endpoint
+* Add customer preview endpoint
+* Add customer create endpoint
+* Add Admin-only customer correction endpoint
+* Enforce required fields
+* Enforce locked customer fields for Operator
+
+Frontend tasks:
+
+* Customers list screen
+* Customer detail screen
+* Create customer form
+* Create customer preview/confirmation screen
+* Customer correction screen for Admin
+* Notes column placeholder if notes phase is not implemented yet
+
+Completion criteria:
+
+* Operator can create customer after preview confirmation
+* Operator cannot edit locked customer fields
+* Admin can correct customer fields
+* Customer list supports pagination
+* Customer list supports basic search/filtering
+
+==================================================
+10. PHASE 5 - UNIT WORKFLOW
+===========================
+
+Goal:
+Implement unit creation, listing, status tracking, and maintenance behavior.
+
+Backend tasks:
+
+* Create units table/model
+* Add unit list endpoint
+* Add unit detail endpoint
+* Add Admin/Dev unit creation endpoint
+* Add unit maintenance endpoint
+* Enforce allowed unit statuses
+* Enforce no renting from maintenance/rented state
+
+Frontend tasks:
+
+* Units list screen
+* Unit detail screen
+* Unit status display
+* Maintenance action UI
+* Admin unit creation/correction UI
+
+Completion criteria:
+
+* Units can be listed
+* Unit detail works
+* Admin/Dev can create units
+* Operator can mark unit maintenance where allowed
+* Operator can return unit from maintenance where allowed
+* Rented and maintenance units cannot be selected for new rental
+
+==================================================
+11. PHASE 6 - RENTAL CREATION WORKFLOW
+======================================
+
+Goal:
+Implement the core workflow for starting a rental.
+
+Backend tasks:
+
+* Create rentals table/model
+* Create billing_periods table/model
+* Create charges table/model
+* Create deposit_credits table/model
+* Create meter_readings table/model
+* Add rental preview endpoint
+* Add rental create endpoint
+* Enforce unit availability
+* Enforce one active rental per unit
+* Enforce initial meter reading double-entry validation
+* Generate first billing period
+* Generate first rent charge
+* Create deposit credit if deposit amount is greater than zero
+* Update unit status to rented
+
+Frontend tasks:
+
+* Start rental screen
+* Customer selector
+* Unit selector
+* Start date field
+* Rent amount field
+* Deposit amount field
+* Initial meter reading double-entry fields
+* Preview/confirmation screen
+* Rental detail screen base
+
+Completion criteria:
+
+* Operator can start rental after preview confirmation
+* Unit becomes rented
+* First billing period is created
+* First rent charge is created
+* Initial meter reading is created and locked
+* Deposit credit is created when applicable
+* Rental detail shows customer, unit, billing period, charge, deposit, and meter reading
+
+==================================================
+12. PHASE 7 - BILLING PERIOD AND RENT CHARGE GENERATION
+=======================================================
+
+Goal:
+Implement recurring billing period and rent charge generation.
+
+Backend tasks:
+
+* Add eligible billing period detection
+* Add billing generation preview endpoint
+* Add billing generation submit endpoint
+* Generate new billing periods for eligible rentals
+* Generate rent charges for eligible billing periods
+* Lock generated charges
+* Prevent duplicate billing periods
+* Prevent duplicate rent charges for same billing period
+* Update billing period status where applicable
+
+Frontend tasks:
+
+* Generate Due Charges screen
+* Eligible rentals preview
+* Skipped rentals display
+* Confirmation screen
+* Billing periods list
+* Billing period detail
+
+Completion criteria:
+
+* Operator can preview eligible billing generation
+* Operator can confirm generation
+* Generated rent charges are system-calculated
+* Operator cannot edit generated charge values
+* Duplicate charges are blocked
+* Billing periods show correct status values
+
+==================================================
+13. PHASE 8 - PAYMENT WORKFLOW
+==============================
+
+Goal:
+Implement cash payment recording and rental-level balance calculation.
+
+Backend tasks:
+
+* Create payments table/model
+* Add payment list endpoint
+* Add payment detail endpoint
+* Add payment preview endpoint
+* Add payment create endpoint
+* Enforce positive amount
+* Enforce confirmation
+* Set entered_at automatically
+* Detect backdated payments
+* Lock payment after creation
+* Calculate rental balance
+
+Frontend tasks:
+
+* Record Payment screen
+* Payment preview/confirmation screen
+* Payments list
+* Payment detail
+* Balance display on rental detail
+
+Completion criteria:
+
+* Operator can record payment after confirmation
+* Payment becomes locked
+* Rental balance updates correctly
+* Backdated payment is detected
+* Operator cannot edit/delete/reverse payment
+* Payment list supports pagination
+
+==================================================
+14. PHASE 9 - METER READING AND ELECTRICITY CHARGE WORKFLOW
+===========================================================
+
+Goal:
+Implement periodic/final meter readings and electricity charge generation.
+
+Backend tasks:
+
+* Add meter reading list endpoint
+* Add meter reading detail endpoint
+* Add meter reading preview endpoint
+* Add meter reading create endpoint
+* Enforce double-entry match
+* Enforce preview confirmation
+* Lock submitted readings
+* Calculate usage from previous reading
+* Read electricity rate from system settings
+* Store electricity_rate_snapshot on charge
+* Generate electricity charge where applicable
+
+Frontend tasks:
+
+* Submit Meter Reading screen
+* Double-entry input
+* Meter reading preview/confirmation screen
+* Meter readings list
+* Meter reading detail
+* Electricity charge display
+
+Completion criteria:
+
+* Operator can submit meter reading after double-entry and preview
+* Mismatched values block submission
+* Submitted reading is locked
+* Electricity usage is calculated
+* Electricity charge is generated
+* Electricity charge stores rate snapshot
+
+==================================================
+15. PHASE 10 - RENTAL CLOSURE WORKFLOW
+======================================
+
+Goal:
+Implement closing a rental.
+
+Backend tasks:
+
+* Add rental closure preview endpoint
+* Add rental close endpoint
+* Require final meter reading
+* Require final balance calculation
+* Enforce minimum rental duration
+* Block early close for Operator
+* Generate final electricity charge where applicable
+* Set rental status to closed
+* Set unit status according to release rules
+
+Frontend tasks:
+
+* Close Rental screen
+* Final meter reading double-entry
+* Closure preview/confirmation screen
+* Closure warnings
+* Closed rental display
+
+Completion criteria:
+
+* Operator can close rental when rules pass
+* Final meter reading is recorded and locked
+* Final electricity charge is generated where applicable
+* Rental becomes closed
+* Unit becomes available if no restriction applies
+* Early close requires Admin workflow
+
+==================================================
+16. PHASE 11 - DEPOSIT CREDIT WORKFLOW
+======================================
+
+Goal:
+Implement deposit tracking and manual deposit application.
+
+Backend tasks:
+
+* Add deposit detail endpoint
+* Add deposit application preview endpoint
+* Add deposit application submit endpoint
+* Enforce remaining deposit limit
+* Require application note
+* Update applied and remaining amounts
+* Recalculate rental balance
+* Enforce sensitive action behavior from settings
+
+Frontend tasks:
+
+* Deposit detail section on rental detail
+* Apply Deposit screen/modal
+* Preview/confirmation screen
+* Deposit status display
+
+Completion criteria:
+
+* Deposit remains held by default
+* Deposit can be manually applied when allowed
+* Applied deposit reduces outstanding balance
+* Remaining deposit updates correctly
+* Deposit application requires note and confirmation
+
+==================================================
+17. PHASE 12 - GENERIC NOTES SYSTEM
+===================================
+
+Goal:
+Implement contextual notes for individual records.
+
+Backend tasks:
+
+* Create notes table/model
+* Add note list endpoint
+* Add note create endpoint
+* Add Admin hide note endpoint
+* Add Admin restore note endpoint
+* Enforce record_type and record_id validation
+* Enforce append-only behavior for Operator
+* Enforce hidden note visibility rules
+
+Frontend tasks:
+
+* Notes column/summary in list views
+* Notes panel on record detail views
+* Add note modal
+* Hidden note behavior for Admin
+* Note history display
+
+Completion criteria:
+
+* Notes can attach to individual records
+* Notes can be appended after creation
+* Operator cannot edit/delete notes
+* Admin can hide/restore notes
+* Lists show notes summary column
+* Detail views show full note history
+
+==================================================
+18. PHASE 13 - AUDIT LOGS AND REVIEW FLAGS
+==========================================
+
+Goal:
+Implement action history and high-signal oversight markers.
+
+Backend tasks:
+
+* Create audit_logs table/model
+* Create review_flags table/model
+* Add audit log service
+* Add review flag service
+* Add audit list/detail endpoints
+* Add review flag list/detail endpoints
+* Add review/dismiss endpoints
+* Create review flags for configured sensitive actions
+* Ensure Operator cannot access audit/review endpoints
+
+Frontend tasks:
+
+* Admin Review Flags list
+* Review Flag detail
+* Review/dismiss actions
+* Audit Logs list
+* Audit Log detail
+* Admin dashboard review flag summary
+
+Completion criteria:
+
+* Sensitive actions create review flags according to settings
+* Audit logs record meaningful actions
+* Operator cannot see review flags
+* Operator cannot see audit logs
+* Admin can review/dismiss flags
+* Admin can inspect audit history
+
+==================================================
+19. PHASE 14 - SYSTEM SETTINGS
+==============================
+
+Goal:
+Implement configurable system behavior.
+
+Backend tasks:
+
+* Create system_settings table/model
+* Seed required default settings
+* Add settings list/detail endpoints
+* Add setting update endpoint
+* Enforce Admin/Dev access only
+* Create audit log on setting change
+* Create review flag for sensitive setting change
+
+Required settings:
+
+* grace_period_days
+* minimum_rental_days
+* electricity_rate
+* sensitive_action.backdated_payment
+* sensitive_action.deposit_applied
+* sensitive_action.unit_maintenance_change
+* sensitive_action.delinquency_override
+* review_threshold.unit_maintenance_days
+
+Frontend tasks:
+
+* System Settings list
+* System Setting detail
+* Setting update UI
+* Sensitive setting confirmation
+
+Completion criteria:
+
+* Admin can view/update settings
+* Operator cannot access settings
+* Settings affect business logic
+* Sensitive setting changes create review flags
+
+==================================================
+20. PHASE 15 - ADMIN CORRECTION WORKFLOW
+========================================
+
+Goal:
+Implement privileged correction path for serious mistakes.
+
+Backend tasks:
+
+* Create admin_corrections table/model
+* Add correction preview endpoint
+* Add correction apply endpoint
+* Add correction list/detail endpoints
+* Require reason
+* Require confirmation
+* Create audit log
+* Create review flag when financially sensitive
+* Implement supported correction types
+
+Supported correction types:
+
+* customer_field_correction
+* charge_override
+* charge_void
+* payment_correction
+* meter_reading_correction
+* rental_reopen
+* rental_early_close_override
+* delinquency_override
+* system_setting_correction
+* deposit_correction
+
+Frontend tasks:
+
+* Admin Corrections list
+* Admin Correction detail
+* Admin Correction preview/confirmation
+* Admin correction actions from relevant record detail screens
+
+Completion criteria:
+
+* Operator cannot access Admin corrections
+* Admin can perform supported corrections
+* Corrections require reason and confirmation
+* Corrections preserve history
+* Corrections create audit logs
+* Financially sensitive corrections create review flags
+
+==================================================
+21. PHASE 16 - REPORTS AND DASHBOARDS
+=====================================
+
+Goal:
+Implement operational and oversight reporting.
+
+Backend tasks:
+
+* Add Operator dashboard endpoint
+* Add Admin dashboard endpoint
+* Add occupancy report endpoint
+* Add delinquency report endpoint
+* Add monthly cash report endpoint
+* Add charge report endpoint
+* Add review flag report endpoint
+* Add admin correction report endpoint
+* Enforce role-based access
+
+Frontend tasks:
+
+* Operator dashboard
+* Admin dashboard
+* Occupancy report screen
+* Delinquency report screen
+* Monthly cash report screen
+* Charge report screen
+* Review flag report screen
+* Admin correction report screen
+
+Completion criteria:
+
+* Operator sees operational dashboard
+* Admin sees oversight dashboard
+* Operator can access occupancy and delinquency reports
+* Admin can access financial and oversight reports
+* Reports use correct date/balance rules
+* Deposits are not counted as revenue
+
+==================================================
+22. PHASE 17 - SEED DATA AND DEMO MODE
+======================================
+
+Goal:
+Create realistic fake data for local development and public demo.
+
+Tasks:
+
+* Create seed data script/process
+* Add fake customers
+* Add fake units
+* Add active rentals
+* Add closed rentals
+* Add billing periods
+* Add rent charges
+* Add electricity charges
+* Add payments
+* Add deposit credits
+* Add meter readings
+* Add notes
+* Add review flags
+* Add audit logs
+* Add admin corrections
+* Add demo Operator account
+* Add demo Admin account
+
+Completion criteria:
+
+* Demo app has realistic fake workflows
+* Demo data contains no real personal data
+* Demo credentials work
+* Demo can be reset safely
+* Production cannot be overwritten by demo seed process
+
+==================================================
+23. PHASE 18 - TESTING
+======================
+
+Goal:
+Verify business workflows before deployment.
+
+Backend testing:
+
+* auth tests
+* role access tests
+* customer creation tests
+* unit availability tests
+* rental creation tests
+* billing generation tests
+* charge generation tests
+* payment tests
+* meter reading tests
+* balance calculation tests
+* delinquency tests
+* note permission tests
+* review flag tests
+* admin correction tests
+
+Frontend/manual testing:
+
+* login/logout
+* tablet navigation
+* customer creation
+* rental creation
+* payment submission
+* meter reading submission
+* charge generation
+* deposit application
+* rental closure
+* notes behavior
+* Admin review flags
+* Admin corrections
+* reports
+
+Completion criteria:
+
+* critical backend tests pass
+* manual workflow checklist passes
+* no core workflow is blocked
+* tablet browser can complete daily Operator workflows
+
+==================================================
+24. PHASE 19 - PUBLIC DEMO DEPLOYMENT
+=====================================
+
+Goal:
+Deploy public demo with fake data.
+
+Tasks:
+
+* Configure Render frontend static site
+* Configure Render backend web service
+* Configure Render PostgreSQL database
+* Add environment variables
+* Run migrations
+* Seed fake demo data
+* Configure frontend API URL
+* Test login
+* Test role access
+* Test core workflows
+* Confirm no secrets are exposed
+* Confirm GitHub contains no real data
+
+Completion criteria:
+
+* Demo frontend loads
+* Demo backend works
+* Demo database persists data
+* Demo accounts work
+* Tablet can access demo app
+* Core workflows work with fake data
+
+==================================================
+25. PHASE 20 - PRIVATE PRODUCTION DEPLOYMENT
+============================================
+
+Goal:
+Deploy private production app when ready for real business use.
+
+Tasks:
+
+* Create separate production database
+* Configure production backend environment
+* Configure production frontend environment
+* Run migrations
+* Create real role-based accounts
+* Confirm backup strategy
+* Confirm no demo seed overwrite risk
+* Test login
+* Test core workflows
+* Test database persistence
+* Confirm production URL access
+
+Completion criteria:
+
+* Production app is separate from demo app
+* Production database is separate from demo database
+* Production secrets are not in GitHub
+* Production data is not in GitHub
+* Operator/Admin/Dev accounts work
+* Backup process exists before real use
+
+==================================================
+26. PHASE 21 - FINAL REVIEW
+===========================
+
+Goal:
+Confirm the application is ready for showcase or controlled business use.
+
+Review checklist:
+
+* documentation matches implemented behavior
+* schema matches implemented models
+* API contract matches implemented endpoints
+* UI screen map matches implemented screens
+* role permissions are enforced
+* locked records are enforced
+* balances calculate correctly
+* payments cannot be edited by Operator
+* meter readings cannot be edited by Operator
+* generated charges cannot be edited by Operator
+* Admin corrections work
+* review flags work
+* audit logs work
+* reports work
+* tablet workflow works
+* demo data is fake
+* secrets are not exposed
+* deployment is stable
+
+Completion criteria:
+
+* public demo is presentable
+* private production is ready only if business use is intended
+* known limitations are documented
+* remaining issues are tracked
+
+==================================================
+27. BUILD ORDER SUMMARY
+=======================
+
+1. Project setup
+2. Backend foundation
+3. Frontend foundation
+4. Auth and accounts
+5. Customers
+6. Units
+7. Rental creation
+8. Billing/rent charge generation
+9. Payments
+10. Meter readings/electricity charges
+11. Rental closure
+12. Deposit credits
+13. Notes
+14. Audit logs/review flags
+15. System settings
+16. Admin corrections
+17. Reports/dashboards
+18. Seed data/demo mode
+19. Testing
+20. Public demo deployment
+21. Private production deployment
+22. Final review
+
+==================================================
+END OF DOCUMENT
+===============

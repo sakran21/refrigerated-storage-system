@@ -1,0 +1,302 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: Project Specification
+VERSION: 0.0.0
+STATUS: Pre-Design
+
+==================================================
+1. PROJECT OVERVIEW
+==================================================
+
+This project is a web-based management and oversight system for a refrigerated storage unit rental business.
+
+The system replaces paper-based tracking and provides a centralized source of truth for customers, storage units, rentals, billing periods, electricity usage, charges, payments, balances, delinquency, manual overrides, and operational oversight.
+
+The application is intended for real daily operational use. It must remain simple enough for non-technical staff while providing sufficient visibility, traceability, and auditability for ownership and oversight.
+
+The system is not being built as a lightweight demo. It is being designed as a maintainable business application with production-oriented structure, data persistence, and clear operational rules.
+
+==================================================
+2. PRIMARY BUSINESS OBJECTIVE
+==================================================
+
+The primary objective of the system is operational control and visibility.
+
+The owner or stakeholder should be able to determine:
+
+- Which units are occupied
+- Which units are available
+- Which units are in maintenance
+- Which customers are associated with each unit
+- What money is owed
+- What money has been received
+- Which rentals are delinquent
+- What electricity charges have been incurred
+- What payments have been recorded
+- What overrides or unusual actions have occurred
+- What gross cash was received during a calendar month
+
+The system should reduce dependence on paper records and minimize opportunities for records to be altered without accountability.
+
+==================================================
+3. SECONDARY OBJECTIVES
+==================================================
+
+- Improve organization of customer information
+- Simplify monthly billing operations
+- Maintain a historical record of rentals
+- Maintain a historical record of charges and payments
+- Track electricity usage and related charges
+- Provide monthly reporting
+- Support oversight review of unusual activity
+- Create a foundation for future analytics and prediction features
+- Serve as a maintainable long-term operational platform
+
+==================================================
+4. TARGET USERS
+==================================================
+
+Manager
+- Performs day-to-day operations
+- Manages customers
+- Manages units
+- Starts rentals
+- Closes rentals
+- Records payments
+- Records meter readings
+- Manages unit availability
+- Performs allowed operational overrides when needed
+
+Oversight
+- Reviews activity history
+- Reviews overrides
+- Reviews unusual activity
+- Monitors operational integrity
+- Can override delinquency-related restrictions when appropriate
+
+Developer
+- Maintains the application
+- Deploys updates
+- Resolves issues
+- Implements future enhancements
+- Supports reporting, automation, and analytics work
+
+==================================================
+5. DEVICE SUPPORT
+==================================================
+
+Primary Platform:
+- Android tablet
+- Touch-first interaction
+- Chrome browser
+
+Secondary Platform:
+- Desktop browser
+
+Not Targeted:
+- Phone-first experience
+- Native mobile applications
+- Offline operation
+- Keyboard-dependent workflows
+
+Design Implication:
+The interface should be usable through touch input without requiring a keyboard. Desktop support should exist, but tablet usability is the primary operational target.
+
+==================================================
+6. BUSINESS DOMAIN
+==================================================
+
+The business rents refrigerated storage units.
+
+Customers rent units on recurring monthly billing periods.
+
+Customers may:
+- Rent multiple units
+- Pay late
+- Make partial payments
+- Have multiple active rentals
+
+Each rental is unit-centric.
+
+One rental represents one unit rental period from start to closure.
+
+Electricity consumption is tracked separately and billed according to recorded meter readings.
+
+The business primarily operates with cash payments.
+
+Late payments are expected in this business and should not automatically be treated as suspicious behavior.
+
+==================================================
+7. CORE FUNCTIONAL AREAS
+==================================================
+
+Customer Management
+- Create and maintain customer records
+- Store customer identification information
+- Maintain emergency contact information
+- Preserve customer history after rentals close
+
+Unit Management
+- Track availability
+- Track occupancy
+- Track maintenance status
+- Prevent double-booking
+
+Rental Management
+- Start rentals
+- Close rentals
+- Manage unit-specific rental periods
+- Manage billing periods
+- Track delinquency
+
+Billing
+- Generate recurring rent charges
+- Generate electricity charges
+- Track outstanding balances
+- Separate charges from payments
+
+Payments
+- Record cash payments
+- Apply payments against balances
+- Track payment history
+- Support partial payments
+
+Deposits
+- Track deposit credit
+- Apply deposit credit against oldest unpaid charges
+- Exclude deposits from revenue reporting
+
+Oversight
+- Audit meaningful changes
+- Review overrides
+- Review unusual activity
+- Track review flags
+
+Reporting
+- Monthly revenue reporting
+- Rent and electricity revenue separation
+- Delinquency reporting
+- Occupancy reporting
+- Oversight activity reporting
+
+==================================================
+8. CORE BUSINESS PRINCIPLES
+==================================================
+
+Charges and payments are separate concepts.
+
+A charge represents money owed.
+
+A payment represents cash received.
+
+Late payments are expected and should not automatically be considered suspicious.
+
+Delinquency is a business state, not evidence of misconduct.
+
+Manual overrides are allowed when operationally necessary, but they must be logged and reviewable.
+
+Historical records should remain traceable.
+
+Financial and operational records should not be silently deleted or rewritten.
+
+Notes may provide human context, but notes must not act as the only mechanism for changing money, status, billing, delinquency, or reporting logic.
+
+Operational transparency is more important than blind automation.
+
+The system should favor simplicity whenever a more complex implementation provides little practical business value.
+
+==================================================
+9. CURRENTLY APPROVED FEATURES
+==================================================
+
+- Customer records
+- Unit records
+- Unit-centric rental lifecycle management
+- Billing period tracking
+- Automatic recurring rent charges
+- Electricity meter reading tracking
+- Electricity charge calculation
+- Cash payment recording
+- Partial payment support
+- Deposit tracking
+- Delinquency tracking
+- Audit logging
+- Review flag tracking
+- Override tracking
+- Monthly reporting
+- Touch-first tablet operation
+- Developer-maintained production deployment
+- Future Python reporting and analytics layer
+
+==================================================
+10. CURRENTLY EXCLUDED FEATURES
+==================================================
+
+- Payment processing
+- Tax calculation
+- Receipt generation
+- Accounting software integration
+- Customer portal
+- Mobile-phone optimization
+- Offline mode
+- Native mobile app
+- Photo storage
+- Reservation system
+- Business customer accounts
+- Meter reading correction workflow
+- Refund workflow unless later proven simple enough
+
+==================================================
+11. HIGH-LEVEL TECHNOLOGY DIRECTION
+==================================================
+
+Frontend:
+- React
+- TypeScript
+- Vite
+
+Backend:
+- ASP.NET Core Web API
+- C#
+- .NET 10 LTS
+
+Database:
+- PostgreSQL
+
+ORM:
+- Entity Framework Core
+
+Python Layer:
+- Reporting scripts
+- Audit and anomaly analysis
+- Future delinquency-risk scoring
+- Data export
+- Operational automation
+
+Hosting:
+- Cloud-hosted
+- Final provider still to be locked during deployment planning
+
+Repository:
+- GitHub-hosted monorepo
+- Public portfolio visibility where appropriate
+
+==================================================
+12. DOCUMENTATION ROADMAP
+==================================================
+
+This document defines project scope and direction only.
+
+Subsequent documents will define:
+
+01_BUSINESS_REQUIREMENTS_LOCKED.txt
+02_BUSINESS_RULES.txt
+03_ENTITY_FIELDS.txt
+04_STATE_MACHINES.txt
+05_SCHEMA_DRAFT.txt
+06_API_CONTRACT.txt
+07_UI_SCREEN_MAP.txt
+08_DEPLOYMENT_PLAN.txt
+
+==================================================
+END OF DOCUMENT
+==================================================

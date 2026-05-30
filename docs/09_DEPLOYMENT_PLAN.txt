@@ -1,0 +1,849 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: Deployment Plan
+VERSION: 0.1.0
+STATUS: Locked Deployment Draft
+
+==================================================
+
+1. PURPOSE
+   ==================================================
+
+This document defines the deployment plan for the Refrigerated Storage Unit Rental System.
+
+This document defines:
+
+* deployment environments
+* hosting direction
+* database deployment
+* frontend deployment
+* backend deployment
+* GitHub repository rules
+* secrets handling
+* demo/showcase model
+* production data rules
+* backup expectations
+* deployment workflow
+
+==================================================
+2. DEPLOYMENT PRINCIPLES
+========================
+
+DP-001
+The system must be deployable as a real web application, not only as a local demo.
+
+DP-002
+The system must support local development before paid hosting is required.
+
+DP-003
+The deployed system must support tablet and desktop browser access.
+
+DP-004
+The deployed system must separate code, configuration, secrets, and production data.
+
+DP-005
+Production secrets must never be committed to GitHub.
+
+DP-006
+Production customer/payment/rental data must never be committed to GitHub.
+
+DP-007
+The public portfolio version must use fake seeded data only.
+
+DP-008
+The real production version must be private and separate from the public demo version.
+
+DP-009
+The application must be deployable from a GitHub-hosted monorepo.
+
+DP-010
+Deployment must remain simple enough for solo maintenance.
+
+==================================================
+3. TECHNOLOGY STACK
+===================
+
+Frontend:
+
+* React
+* TypeScript
+* Vite
+
+Backend:
+
+* ASP.NET Core Web API
+* C#
+* .NET
+
+Database:
+
+* PostgreSQL
+
+ORM:
+
+* Entity Framework Core
+
+Authentication:
+
+* ASP.NET Core cookie-based authentication
+* Persistent browser sessions
+* Role-based access control
+
+Repository:
+
+* GitHub-hosted monorepo
+
+Hosting direction:
+
+* Render-only v1 deployment
+
+Target devices:
+
+* Android tablet using Chrome
+* Desktop/laptop browser
+
+Out of scope:
+
+* Native mobile app
+* Offline sync
+* Phone-first layout
+* Photo/object storage
+* Customer-facing portal
+
+==================================================
+4. ENVIRONMENTS
+===============
+
+The project uses three practical environments:
+
+1. Local Development
+2. Public Demo
+3. Private Production
+
+==================================================
+5. LOCAL DEVELOPMENT ENVIRONMENT
+================================
+
+Purpose:
+Used for active development, testing, debugging, and feature implementation.
+
+Runs on developer machine.
+
+Local development includes:
+
+* React frontend running locally
+* ASP.NET Core backend running locally
+* PostgreSQL database running locally
+* development environment variables
+* seeded fake development data
+
+Local development must not require paid hosting.
+
+Local development must not use real customer data.
+
+Local development database may be reset during development.
+
+Local development is used for:
+
+* building features
+* testing business rules
+* testing API endpoints
+* testing UI workflows
+* testing database migrations
+* debugging authentication
+* preparing seeded demo data
+
+==================================================
+6. PUBLIC DEMO ENVIRONMENT
+==========================
+
+Purpose:
+Used for portfolio, live demonstration, recruiter/employer review, and in-person showcase.
+
+Public demo uses:
+
+* deployed React frontend
+* deployed ASP.NET Core backend
+* deployed PostgreSQL database
+* fake seeded data only
+* demo login credentials
+
+Public demo must not contain:
+
+* real customer data
+* real payment data
+* real rental history
+* real phone numbers
+* real ID numbers
+* real emergency contact information
+* production secrets
+* private client/business data
+
+Public demo supports:
+
+* Operator demo account
+* Admin demo account
+
+Demo accounts must use clearly fake credentials.
+
+Example demo roles:
+
+* demo_operator
+* demo_admin
+
+Public demo data must include realistic fake examples for:
+
+* customers
+* units
+* active rentals
+* closed rentals
+* billing periods
+* rent charges
+* electricity charges
+* payments
+* deposit credits
+* meter readings
+* delinquent rentals
+* notes
+* review flags
+* audit logs
+* admin corrections
+* system settings
+
+Public demo must allow someone to understand the system without accessing private production data.
+
+==================================================
+7. PRIVATE PRODUCTION ENVIRONMENT
+=================================
+
+Purpose:
+Used for the real business version of the application.
+
+Private production uses:
+
+* deployed React frontend
+* deployed ASP.NET Core backend
+* managed PostgreSQL database
+* production environment variables
+* real business data
+
+Private production must be separate from public demo.
+
+Private production must not share database with public demo.
+
+Private production must not use public demo credentials.
+
+Private production access is limited to:
+
+* Operator account
+* Admin account
+* Dev account
+
+Private production data must be protected from:
+
+* public GitHub exposure
+* demo environment exposure
+* accidental seed overwrite
+* local development reset scripts
+* public screenshots containing real sensitive data
+
+==================================================
+8. HOSTING PROVIDER
+===================
+
+V1 hosting provider:
+
+* Render
+
+Render is used for:
+
+* frontend static site
+* backend web service
+* managed PostgreSQL database
+
+Reason:
+Render keeps v1 deployment simple by allowing the frontend, backend, and database to live under one hosting provider.
+
+Hosting budget target:
+
+* $30 to $80 per month maximum operating comfort range
+
+Paid hosting is not required at project start.
+
+Paid always-on hosting becomes required when:
+
+* the app is stable enough to showcase
+* tablet access outside the developer machine is needed
+* the backend must not sleep
+* a public demo link is needed
+* private production use begins
+
+==================================================
+9. FRONTEND DEPLOYMENT
+======================
+
+Frontend app:
+
+* React
+* TypeScript
+* Vite
+
+Deployment type:
+
+* static site deployment
+
+Frontend deployment must:
+
+* build from the frontend project folder
+* serve compiled static assets
+* connect to the deployed backend API
+* use environment-specific backend API URL
+* support Android tablet Chrome
+* support desktop browsers
+
+Frontend environment variables:
+
+* API base URL
+* environment name
+
+Frontend must not contain:
+
+* database connection strings
+* backend secrets
+* auth secrets
+* production passwords
+* private customer data
+
+Frontend routes must support:
+
+* login
+* Operator dashboard
+* Admin dashboard
+* customer screens
+* unit screens
+* rental screens
+* billing screens
+* charge screens
+* payment screens
+* meter reading screens
+* reports
+* admin tools where role allows
+
+==================================================
+10. BACKEND DEPLOYMENT
+======================
+
+Backend app:
+
+* ASP.NET Core Web API
+* C#
+
+Deployment type:
+
+* backend web service
+
+Backend deployment must:
+
+* connect to PostgreSQL
+* run database migrations safely
+* support cookie-based authentication
+* support persistent sessions
+* enforce role-based access control
+* expose API endpoints to frontend
+* restrict CORS to approved frontend origins
+* read secrets from environment variables
+* log application errors
+
+Backend environment variables:
+
+* database connection string
+* authentication/cookie secret or data protection configuration
+* ASP.NET Core environment
+* allowed frontend origin
+* demo seed mode flag where applicable
+* logging level
+
+Backend must not:
+
+* hardcode secrets
+* hardcode production connection strings
+* expose stack traces to normal users in production
+* allow public unauthenticated access to protected endpoints
+* use local development database in deployed production
+
+==================================================
+11. DATABASE DEPLOYMENT
+=======================
+
+Database:
+
+* PostgreSQL
+
+Production database:
+
+* managed PostgreSQL database hosted through deployment provider
+
+Database stores:
+
+* accounts
+* customers
+* units
+* rentals
+* billing periods
+* charges
+* payments
+* deposit credits
+* meter readings
+* notes
+* audit logs
+* review flags
+* system settings
+* admin corrections
+
+Database deployment must support:
+
+* schema migrations
+* persistent storage
+* backup/recovery process
+* separation between demo and production data
+
+Local development database:
+
+* local PostgreSQL
+
+Demo database:
+
+* deployed PostgreSQL with fake seeded data
+
+Production database:
+
+* deployed PostgreSQL with real private business data
+
+Database rules:
+
+* demo and production must not share database
+* local development must not use production database
+* seed scripts must not run against production unless explicitly designed for safe production initialization
+* production database URL must never be committed to GitHub
+
+==================================================
+12. SEED DATA RULES
+===================
+
+Seed data is required for:
+
+* local development
+* public demo
+
+Seed data must be fake.
+
+Seed data must include enough records to demonstrate:
+
+* normal rental workflow
+* delinquent rental workflow
+* payment recording
+* meter reading workflow
+* charge generation
+* deposit credit behavior
+* review flags
+* audit logs
+* admin corrections
+* operational reports
+* Admin oversight reports
+
+Seed data must not include:
+
+* real customer names
+* real phone numbers
+* real ID numbers
+* real emergency contacts
+* real production payments
+* real production rental history
+
+Production must not be overwritten by demo seed data.
+
+==================================================
+13. GITHUB REPOSITORY RULES
+===========================
+
+Repository type:
+
+* monorepo
+
+Repository visibility:
+
+* public allowed for portfolio
+
+Repository may contain:
+
+* frontend code
+* backend code
+* database migration files
+* documentation
+* fake seed data
+* README
+* screenshots using fake data
+* deployment instructions
+* architecture notes
+
+Repository must not contain:
+
+* production database URL
+* production secrets
+* production credentials
+* real customer data
+* real payment data
+* real rental data
+* real database dumps
+* `.env` files with secrets
+* private hosting tokens
+
+Required repository protection:
+
+* `.gitignore`
+* environment variable template file
+* sample `.env.example` without secrets
+* clear README warning against committing secrets
+
+==================================================
+14. ENVIRONMENT VARIABLE RULES
+==============================
+
+Secrets and configuration must be stored outside source code.
+
+Allowed in GitHub:
+
+* `.env.example`
+* placeholder values
+* documentation explaining required variables
+
+Not allowed in GitHub:
+
+* real `.env`
+* production connection strings
+* production passwords
+* cookie/auth secrets
+* hosting tokens
+* private credentials
+
+Required backend configuration:
+
+* DATABASE_URL or equivalent PostgreSQL connection string
+* ASPNETCORE_ENVIRONMENT
+* AUTH/COOKIE secret or data protection configuration
+* ALLOWED_ORIGIN
+* LOG_LEVEL
+
+Required frontend configuration:
+
+* API_BASE_URL
+* ENVIRONMENT_NAME
+
+==================================================
+15. AUTHENTICATION DEPLOYMENT RULES
+===================================
+
+Authentication uses:
+
+* ASP.NET Core cookie-based authentication
+* persistent browser sessions
+* role-based access control
+
+Deployment must support:
+
+* secure cookies in production
+* correct frontend/backend origin configuration
+* persistent login behavior
+* logout behavior
+* inactive account blocking
+
+Production session behavior:
+
+* users remain logged in until logout, expiration, or invalidation
+* session cookies must not expose sensitive user data
+* authentication must be enforced server-side
+
+Demo environment:
+
+* demo credentials are allowed
+* demo accounts must not access production data
+
+==================================================
+16. BACKUP AND RECOVERY EXPECTATIONS
+====================================
+
+Production database must have a backup strategy before real business use.
+
+Backup expectations:
+
+* provider-managed backups where available
+* manual export option before major changes
+* migration caution before production updates
+* ability to restore from recent backup
+
+Before major deployment changes:
+
+* confirm latest backup exists
+* avoid destructive migrations without review
+* test migrations locally first
+* test migrations in demo before production where practical
+
+Production data must not rely on a single local copy.
+
+==================================================
+17. DEPLOYMENT WORKFLOW
+=======================
+
+Standard workflow:
+
+1. Develop locally
+2. Run backend tests locally
+3. Run frontend build locally
+4. Run database migrations locally
+5. Commit code to GitHub
+6. Push to GitHub
+7. Deploy to public demo environment
+8. Test demo environment
+9. Deploy to private production environment when applicable
+10. Verify production health
+11. Monitor logs after deployment
+
+Production deployment must not be treated as complete until:
+
+* frontend loads
+* backend health check passes
+* database connection works
+* login works
+* role access works
+* core workflows work
+* no obvious production errors appear in logs
+
+==================================================
+18. MIGRATION RULES
+===================
+
+Database migrations must be created through Entity Framework Core.
+
+Migrations must be tested locally before deployed use.
+
+Migration files may be committed to GitHub.
+
+Production migration rules:
+
+* avoid destructive schema changes without backup
+* preserve financial/history data
+* preserve audit logs
+* preserve review flags
+* preserve admin corrections
+* preserve notes
+* test major migrations in demo before production
+
+Destructive changes to production data require explicit backup first.
+
+==================================================
+19. LOGGING AND MONITORING
+==========================
+
+Backend should log:
+
+* application startup
+* database connection failures
+* authentication failures
+* authorization failures
+* API errors
+* failed business rule validations
+* failed correction actions
+* failed charge generation
+* failed meter reading submissions
+
+Production logs must not expose:
+
+* passwords
+* full secrets
+* database credentials
+* sensitive customer identity data
+* raw authentication cookies
+
+Admin/business audit logs are stored in the database.
+
+Technical application logs are handled by the hosting environment.
+
+==================================================
+20. SHOWCASE MODEL
+==================
+
+Showcase uses the public demo environment.
+
+Showcase must use:
+
+* fake seeded data
+* demo Operator login
+* demo Admin login
+* realistic business examples
+* deployed frontend URL
+* deployed backend API
+* deployed demo PostgreSQL database
+
+For in-person showcase:
+
+* open app on Android tablet or laptop
+* log in as demo Operator
+* demonstrate daily workflow
+* log in as demo Admin
+* demonstrate oversight workflow
+
+Showcase workflows should include:
+
+* view dashboard
+* view units
+* view customer
+* start rental
+* submit meter reading
+* generate charges
+* record payment
+* view delinquency
+* view notes
+* view review flags as Admin
+* view audit logs as Admin
+* view monthly cash report as Admin
+
+Showcase must not reveal:
+
+* real client/customer data
+* real payment information
+* private production URL if not intended
+* production credentials
+
+==================================================
+21. PRODUCTION HANDOFF MODEL
+============================
+
+Private production app is separate from public demo app.
+
+Production handoff requires:
+
+* production URL
+* Operator account
+* Admin account
+* Dev access
+* production database
+* production environment variables
+* backup process
+* deployment process
+* documentation
+
+Production handoff must include:
+
+* how to log in
+* how to create customer
+* how to start rental
+* how to record payment
+* how to submit meter reading
+* how to generate charges
+* how to view delinquency
+* how to append notes
+* how Admin reviews flags
+* how Admin checks audit logs
+* how backups are handled
+* how to contact Dev for support
+
+==================================================
+22. DEPLOYMENT PHASES
+=====================
+
+Phase 1:
+Local development only.
+
+Required before Phase 2:
+
+* backend project exists
+* frontend project exists
+* local PostgreSQL works
+* basic models exist
+* authentication works locally
+* core dashboard loads locally
+
+Phase 2:
+Public demo deployment.
+
+Required:
+
+* fake seed data
+* deployed frontend
+* deployed backend
+* deployed demo database
+* demo credentials
+* basic workflows functional
+
+Phase 3:
+Private production deployment.
+
+Required:
+
+* stable core workflows
+* production database
+* private credentials
+* production environment variables
+* backup strategy
+* no real data in GitHub
+* no real data in public demo
+
+Phase 4:
+Operational maintenance.
+
+Includes:
+
+* bug fixes
+* backups
+* migration review
+* logs review
+* business rule adjustments
+* security updates
+* controlled deployment updates
+
+==================================================
+23. DEPLOYMENT SUCCESS CRITERIA
+===============================
+
+Deployment is successful when:
+
+* public demo app loads from browser
+* private production app loads from browser when applicable
+* frontend connects to backend
+* backend connects to PostgreSQL
+* login works
+* role access works
+* Operator dashboard works
+* Admin dashboard works
+* database persists data after restart
+* migrations are applied
+* environment variables are not exposed
+* GitHub contains no secrets
+* GitHub contains no real business data
+* demo app contains fake seeded data only
+* production app is separate from demo app
+* health endpoint works
+* tablet browser can use core workflows
+
+==================================================
+24. OUT OF SCOPE FOR V1 DEPLOYMENT
+==================================
+
+V1 deployment does not include:
+
+* native mobile app deployment
+* app store deployment
+* offline sync infrastructure
+* object/photo storage
+* customer-facing portal hosting
+* payment processor integration
+* accounting integration
+* multi-region deployment
+* advanced Kubernetes deployment
+* complex CI/CD pipeline
+* enterprise monitoring stack
+* automated blue/green deployment
+* separate staging environment beyond public demo
+
+==================================================
+END OF DOCUMENT
+===============

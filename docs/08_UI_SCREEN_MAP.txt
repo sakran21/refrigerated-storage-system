@@ -1,0 +1,1472 @@
+PROJECT: Refrigerated Storage Unit Rental System
+DOCUMENT: UI Screen Map
+VERSION: 0.1.0
+STATUS: Locked UI Draft
+
+==================================================
+1. PURPOSE
+==================================================
+
+This document defines the screen structure for the Refrigerated Storage Unit Rental System.
+
+This document defines:
+- main navigation model
+- Operator screens
+- Admin screens
+- shared screens
+- record detail behavior
+- notes behavior
+- preview/confirmation flows
+- tablet-first UI expectations
+
+This document does not define final visual design, colors, CSS, or component code.
+
+==================================================
+2. UI DESIGN PRINCIPLES
+==================================================
+
+UI-001
+The interface must be tablet-first.
+
+UI-002
+The primary target device is an Android tablet running Chrome.
+
+UI-003
+Desktop browser support is required.
+
+UI-004
+Phone-first layout is out of scope for v1.
+
+UI-005
+The interface must use dashboard tiles first, supported by a simple menu.
+
+UI-006
+The UI must avoid dense desktop-only layouts for Operator workflows.
+
+UI-007
+Daily Operator actions must be easy to reach from the dashboard.
+
+UI-008
+Admin oversight screens may contain denser tables and filters.
+
+UI-009
+Preview/confirmation screens must be used before costly or locked submissions.
+
+UI-010
+Locked records must clearly show that they cannot be edited by Operator.
+
+UI-011
+Admin-only functions must not appear as usable actions for Operator.
+
+UI-012
+Dev does not need a separate normal business UI in v1.
+
+==================================================
+3. NAVIGATION MODEL
+==================================================
+
+Primary navigation model:
+- Dashboard tiles first
+- Simple top/side menu for secondary navigation
+
+Operator home experience:
+- large action tiles
+- quick status counts
+- clear daily workflow buttons
+
+Admin home experience:
+- oversight dashboard
+- review flag summary
+- audit/correction shortcuts
+- financial/reporting shortcuts
+
+Navigation must support:
+- touch input
+- desktop mouse input
+- browser use
+- persistent logged-in session
+
+==================================================
+4. ROLE-BASED UI ACCESS
+==================================================
+
+Operator can access:
+- Operator Dashboard
+- Customers
+- Units
+- Rentals
+- Payments
+- Meter Readings
+- Billing Generation
+- Operational Reports
+- Record detail screens
+- Append notes
+
+Operator cannot access:
+- Audit Logs
+- Review Flags
+- Admin Corrections
+- System Settings
+- Oversight financial reports
+- Admin correction tools
+- Charge override tools
+- Charge void tools
+- Hidden notes
+
+Admin can access:
+- Admin Dashboard
+- all Operator screens
+- Review Flags
+- Audit Logs
+- Admin Corrections
+- System Settings
+- Monthly Cash Report
+- Charge Report
+- Admin Correction Report
+- Admin-only correction actions
+- Hidden notes
+
+Dev can access:
+- all screens for maintenance/debugging/support
+
+Dev access is not normal business workflow.
+
+==================================================
+5. NOTES UI RULES
+==================================================
+
+Notes are attached to individual records.
+
+A record means one saved business object, such as:
+- one customer
+- one unit
+- one rental
+- one billing period
+- one charge
+- one payment
+- one deposit credit
+- one meter reading
+- one review flag
+- one audit log
+- one system setting
+- one admin correction
+
+Notes may be blank at initial record creation.
+
+Notes can be appended later.
+
+List views must show notes as a normal column or compact summary beside other record fields.
+
+Example list layout:
+ID | Reading Value | Reading Date | Type | Notes
+
+For records with multiple notes, list views should show:
+- latest visible note summary
+- note count
+- truncated note preview
+
+Full note history is visible from the individual record detail view.
+
+Operator can append notes.
+
+Operator cannot edit previous notes.
+
+Operator cannot delete previous notes.
+
+Admin can hide/manage notes.
+
+Hidden notes are not visible to Operator.
+
+Notes are never treated as a detached global notes page for normal Operator use.
+
+==================================================
+6. STANDARD LIST SCREEN PATTERN
+==================================================
+
+Every major list screen should include:
+
+- page title
+- search/filter area where useful
+- paginated table/list
+- notes column or notes summary column
+- row click/tap to open individual record detail
+- role-appropriate action buttons
+
+List screens must support:
+- pagination
+- touch-friendly row spacing
+- clear status labels
+- simple filtering for major entities
+
+List screens include:
+- Customers List
+- Units List
+- Rentals List
+- Payments List
+- Meter Readings List
+- Charges List
+- Billing Periods List
+- Review Flags List
+- Audit Logs List
+- Admin Corrections List
+- System Settings List
+
+==================================================
+7. STANDARD RECORD DETAIL PATTERN
+==================================================
+
+Every individual record detail screen should include:
+
+- record identity/header
+- key fields
+- related records
+- status indicators
+- notes section for that exact record
+- append note action
+- role-appropriate actions
+- locked/editability indicator
+
+Examples:
+
+Payment Detail:
+- payment id
+- rental
+- customer
+- unit
+- amount
+- payment_date
+- entered_at
+- is_backdated
+- locked status
+- notes for this exact payment
+
+Meter Reading Detail:
+- meter reading id
+- rental
+- customer
+- unit
+- billing period
+- reading type
+- reading value
+- reading date
+- locked status
+- notes for this exact meter reading
+
+Charge Detail:
+- charge id
+- rental
+- customer
+- unit
+- billing period
+- charge type
+- amount
+- status
+- electricity_rate_snapshot if applicable
+- locked status
+- notes for this exact charge
+
+==================================================
+8. PREVIEW / CONFIRMATION SCREEN PATTERN
+==================================================
+
+Preview/confirmation is required for:
+
+- customer creation
+- rental creation
+- rental closure
+- payment submission
+- meter reading submission
+- deposit application
+- billing/charge generation
+- Admin correction
+- sensitive setting change
+- charge override
+- charge void
+
+Preview screens must:
+- show entered values
+- show calculated values
+- show related customer/unit/rental context
+- show warnings
+- require explicit confirmation
+- not save draft records
+
+Submission screens must:
+- require confirmed: true behavior in API
+- create final locked record where applicable
+- show success/failure result clearly
+
+==================================================
+9. LOGIN SCREEN
+==================================================
+
+Screen:
+Login
+
+Access:
+- public
+
+Purpose:
+Allow role-based account login.
+
+Fields:
+- username
+- password
+
+Actions:
+- login
+
+Behavior:
+- successful login opens role-appropriate dashboard
+- failed login shows validation error
+- persistent session is created after successful login
+
+==================================================
+10. OPERATOR DASHBOARD
+==================================================
+
+Screen:
+Operator Dashboard
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Primary daily operations screen.
+
+Tiles / sections:
+- Start Rental
+- Record Payment
+- Submit Meter Reading
+- Generate Due Charges
+- Customers
+- Units
+- Active Rentals
+- Delinquent Rentals
+- Occupancy Report
+
+Summary counts:
+- available units
+- rented units
+- maintenance units
+- delinquent rentals
+- payments recorded today
+- readings due
+- eligible billing generation count
+
+Behavior:
+- tile-based layout
+- touch-friendly
+- daily actions visible without deep navigation
+
+==================================================
+11. ADMIN DASHBOARD
+==================================================
+
+Screen:
+Admin Dashboard
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Oversight and control screen.
+
+Tiles / sections:
+- Pending Review Flags
+- Audit Logs
+- Admin Corrections
+- System Settings
+- Monthly Cash Report
+- Charge Report
+- Backdated Payments
+- Maintenance Alerts
+- Delinquency Summary
+
+Summary counts:
+- pending review flags
+- recent admin corrections
+- backdated payments
+- maintenance-too-long alerts
+- monthly cash received
+- delinquent rentals
+- sensitive actions
+
+==================================================
+12. CUSTOMERS UI
+==================================================
+
+Screen:
+Customers List
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Search and view customers.
+
+Columns:
+- customer id
+- full name
+- phone number
+- ID type
+- ID number
+- active status
+- notes summary
+
+Actions:
+- search
+- open customer detail
+- create customer
+
+--------------------------------------------------
+
+Screen:
+Customer Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View one customer record.
+
+Shows:
+- full name
+- phone number
+- ID type
+- ID number
+- emergency contact name
+- emergency contact phone
+- active rentals
+- rental history
+- balance summary
+- notes for this customer
+
+Operator actions:
+- append note
+- start rental for customer
+
+Admin actions:
+- correct customer fields
+- hide/manage notes
+
+--------------------------------------------------
+
+Screen:
+Create Customer Preview / Confirm
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Create customer with confirmation before locked submission.
+
+Steps:
+1. enter customer fields
+2. preview entered customer data
+3. confirm submission
+4. customer record is created and locked
+
+==================================================
+13. UNITS UI
+==================================================
+
+Screen:
+Units List
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View unit status and availability.
+
+Columns:
+- unit id
+- unit code
+- status
+- base rent amount
+- current rental/customer if rented
+- location note
+- notes summary
+
+Actions:
+- filter by status
+- open unit detail
+
+--------------------------------------------------
+
+Screen:
+Unit Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View one unit.
+
+Shows:
+- unit code
+- status
+- description
+- location note
+- base rent amount
+- active rental if any
+- rental history
+- notes for this unit
+
+Operator actions:
+- mark maintenance
+- return from maintenance
+- append note
+
+Admin actions:
+- correct unit fields
+- hide/manage notes
+
+==================================================
+14. RENTALS UI
+==================================================
+
+Screen:
+Rentals List
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View rentals.
+
+Columns:
+- rental id
+- customer
+- unit
+- status
+- delinquency status
+- start date
+- outstanding balance
+- notes summary
+
+Actions:
+- filter active/closed/delinquent
+- open rental detail
+- start rental
+
+--------------------------------------------------
+
+Screen:
+Rental Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View one rental lifecycle.
+
+Shows:
+- rental id
+- customer
+- unit
+- status
+- delinquency state
+- start date
+- end date if closed
+- rent amount snapshot
+- deposit amount
+- current balance
+- billing periods
+- charges
+- payments
+- meter readings
+- deposit credit
+- notes for this rental
+
+Operator actions:
+- record payment
+- submit meter reading
+- close rental when rules pass
+- append note
+
+Admin actions:
+- reopen through correction workflow
+- early close override
+- delinquency override
+- hide/manage notes
+
+--------------------------------------------------
+
+Screen:
+Start Rental Preview / Confirm
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Start rental with initial meter reading and confirmation.
+
+Steps:
+1. select customer
+2. select available unit
+3. enter start date
+4. enter rent amount
+5. enter deposit amount
+6. enter initial meter reading twice
+7. preview rental creation
+8. confirm
+
+Preview shows:
+- customer
+- unit
+- start date
+- minimum end date
+- first billing period
+- first rent charge
+- deposit credit
+- initial meter reading
+
+--------------------------------------------------
+
+Screen:
+Close Rental Preview / Confirm
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Close rental with final meter reading and final balance preview.
+
+Steps:
+1. enter close date
+2. enter final meter reading twice
+3. preview closure
+4. confirm closure
+
+Preview shows:
+- rental
+- customer
+- unit
+- final meter reading
+- final electricity usage
+- final charges
+- final balance
+- closure warnings
+
+==================================================
+15. BILLING PERIODS UI
+==================================================
+
+Screen:
+Billing Periods List
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View billing periods.
+
+Columns:
+- billing period id
+- rental
+- customer
+- unit
+- period start
+- period end
+- due date
+- grace period end
+- status
+- notes summary
+
+--------------------------------------------------
+
+Screen:
+Billing Period Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View one billing period.
+
+Shows:
+- period start date
+- period end date
+- due date
+- grace period end date
+- status
+- rent charge generation status
+- electricity charge generation status
+- related charges
+- related meter reading
+- notes for this billing period
+
+--------------------------------------------------
+
+Screen:
+Generate Due Charges Preview / Confirm
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Generate eligible billing periods and rent charges.
+
+Steps:
+1. choose rental or all eligible rentals
+2. choose as-of date
+3. preview eligible generation
+4. confirm generation
+
+Preview shows:
+- eligible rentals
+- billing periods to create
+- rent charges to create
+- skipped rentals with reason
+
+Behavior:
+- values are calculated by system
+- generated charges are locked
+- Operator cannot edit generated charge values
+
+==================================================
+16. CHARGES UI
+==================================================
+
+Screen:
+Charges List
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View charges.
+
+Columns:
+- charge id
+- rental
+- customer
+- unit
+- billing period
+- charge type
+- amount
+- status
+- notes summary
+
+Allowed statuses:
+- open
+- voided_by_admin
+
+--------------------------------------------------
+
+Screen:
+Charge Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View one charge.
+
+Shows:
+- charge id
+- rental
+- customer
+- unit
+- billing period
+- charge type
+- amount
+- status
+- description
+- electricity_rate_snapshot if applicable
+- locked status
+- notes for this charge
+
+Operator actions:
+- append note
+
+Admin actions:
+- override charge
+- void charge
+- view correction history
+- hide/manage notes
+
+--------------------------------------------------
+
+Screen:
+Charge Override Preview / Confirm
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Admin correction for charge amount.
+
+Steps:
+1. enter new amount
+2. enter reason
+3. preview previous/new value
+4. confirm correction
+
+Effects:
+- admin correction created
+- audit log created
+- review flag created if financially sensitive
+
+--------------------------------------------------
+
+Screen:
+Charge Void Preview / Confirm
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Void charge without deleting original record.
+
+Steps:
+1. enter reason
+2. preview voiding effect
+3. confirm
+
+Effects:
+- charge status becomes voided_by_admin
+- admin correction created
+- audit log created
+- review flag created if financially sensitive
+
+==================================================
+17. PAYMENTS UI
+==================================================
+
+Screen:
+Payments List
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View payments.
+
+Columns:
+- payment id
+- rental
+- customer
+- unit
+- amount
+- payment date
+- entered at
+- backdated flag
+- notes summary
+
+--------------------------------------------------
+
+Screen:
+Payment Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View one payment.
+
+Shows:
+- payment id
+- rental
+- customer
+- unit
+- amount
+- payment date
+- entered at
+- backdated flag
+- locked status
+- notes for this payment
+
+Operator actions:
+- append note
+
+Admin actions:
+- correction workflow
+- hide/manage notes
+
+--------------------------------------------------
+
+Screen:
+Record Payment Preview / Confirm
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Record cash payment with confirmation.
+
+Steps:
+1. select rental
+2. enter amount
+3. enter payment date
+4. preview payment
+5. confirm payment
+
+Preview shows:
+- customer
+- unit
+- rental
+- amount
+- payment date
+- entered at
+- backdated flag
+- resulting balance
+
+Effects:
+- payment created
+- payment locked
+- balance recalculated
+- review flag created if backdated
+
+==================================================
+18. DEPOSIT UI
+==================================================
+
+Screen:
+Deposit Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View rental deposit credit.
+
+Shows:
+- original amount
+- remaining amount
+- applied amount
+- status
+- notes for this deposit credit
+
+Operator actions:
+- apply deposit if system setting allows
+- append note
+
+Admin actions:
+- correction workflow
+- hide/manage notes
+
+--------------------------------------------------
+
+Screen:
+Apply Deposit Preview / Confirm
+
+Access:
+- Operator when setting allows
+- Admin
+- Dev
+
+Purpose:
+Apply held deposit to outstanding balance.
+
+Steps:
+1. enter amount
+2. enter application note
+3. preview balance impact
+4. confirm
+
+Effects:
+- deposit applied amount increases
+- remaining amount decreases
+- balance recalculated
+- audit log created
+- review flag created according to settings
+
+==================================================
+19. METER READINGS UI
+==================================================
+
+Screen:
+Meter Readings List
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View meter readings.
+
+Columns:
+- meter reading id
+- rental
+- customer
+- unit
+- billing period
+- reading type
+- reading value
+- reading date
+- notes summary
+
+--------------------------------------------------
+
+Screen:
+Meter Reading Detail
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+View one meter reading.
+
+Shows:
+- meter reading id
+- rental
+- customer
+- unit
+- billing period if applicable
+- reading type
+- reading value
+- reading date
+- locked status
+- notes for this exact meter reading
+
+Operator actions:
+- append note
+
+Admin actions:
+- correction workflow
+- hide/manage notes
+
+--------------------------------------------------
+
+Screen:
+Submit Meter Reading Preview / Confirm
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Purpose:
+Submit meter reading with double entry and confirmation.
+
+Steps:
+1. select rental / billing period
+2. choose reading type
+3. enter reading value first time
+4. enter reading value second time
+5. system verifies match
+6. preview reading
+7. confirm submission
+
+Preview shows:
+- customer
+- unit
+- rental
+- billing period if applicable
+- reading type
+- reading value
+- reading date
+- previous reading
+- usage preview when applicable
+
+Effects:
+- meter reading created
+- meter reading locked
+- electricity charge generated where applicable
+
+==================================================
+20. REVIEW FLAGS UI
+==================================================
+
+Screen:
+Review Flags List
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Review sensitive/unusual actions.
+
+Columns:
+- review flag id
+- action type
+- record type
+- record id
+- status
+- created at
+- notes summary
+
+--------------------------------------------------
+
+Screen:
+Review Flag Detail
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Inspect one review flag.
+
+Shows:
+- review flag id
+- linked record
+- action type
+- trigger source
+- status
+- created at
+- reviewed at
+- related audit log if available
+- notes for this review flag
+
+Admin actions:
+- mark reviewed
+- dismiss
+- append note
+- hide/manage notes
+
+==================================================
+21. AUDIT LOGS UI
+==================================================
+
+Screen:
+Audit Logs List
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Review action history.
+
+Columns:
+- audit log id
+- action type
+- record type
+- record id
+- performed by account role
+- created at
+- notes summary
+
+--------------------------------------------------
+
+Screen:
+Audit Log Detail
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Inspect one audit event.
+
+Shows:
+- action type
+- record type
+- record id
+- performed by account role
+- previous value
+- new value
+- created at
+- notes for this audit log
+
+==================================================
+22. SYSTEM SETTINGS UI
+==================================================
+
+Screen:
+System Settings List
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+View configurable system and business behavior.
+
+Columns:
+- setting key
+- setting value
+- sensitive flag
+- updated at
+- notes summary
+
+--------------------------------------------------
+
+Screen:
+System Setting Detail
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+View and update one setting.
+
+Shows:
+- setting key
+- setting value
+- description
+- sensitive flag
+- updated at
+- notes for this setting
+
+Admin/Dev actions:
+- update setting
+- append note
+
+Sensitive setting update:
+- requires reason
+- creates audit log
+- creates review flag
+
+==================================================
+23. ADMIN CORRECTIONS UI
+==================================================
+
+Screen:
+Admin Corrections List
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+View privileged corrections.
+
+Columns:
+- correction id
+- correction type
+- target record type
+- target record id
+- created at
+- notes summary
+
+--------------------------------------------------
+
+Screen:
+Admin Correction Detail
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+View one correction.
+
+Shows:
+- correction type
+- target record type
+- target record id
+- reason
+- previous value
+- new value
+- created at
+- notes for this correction
+
+--------------------------------------------------
+
+Screen:
+Admin Correction Preview / Confirm
+
+Access:
+- Admin
+- Dev
+
+Purpose:
+Apply privileged correction.
+
+Steps:
+1. choose correction type
+2. choose target record
+3. enter reason
+4. enter new value
+5. preview previous/new value
+6. confirm correction
+
+Effects:
+- admin correction created
+- target record updated/status changed
+- audit log created
+- review flag created if financially sensitive
+
+==================================================
+24. REPORTS UI
+==================================================
+
+Screen:
+Occupancy Report
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Shows:
+- total units
+- available units
+- rented units
+- maintenance units
+- occupancy percentage
+
+--------------------------------------------------
+
+Screen:
+Delinquency Report
+
+Access:
+- Operator
+- Admin
+- Dev
+
+Shows:
+- delinquent rentals
+- customer
+- unit
+- outstanding balance
+- days delinquent
+
+--------------------------------------------------
+
+Screen:
+Monthly Cash Report
+
+Access:
+- Admin
+- Dev
+
+Shows:
+- month/year
+- total cash received
+- payment count
+- backdated payment count
+- totals by day
+
+--------------------------------------------------
+
+Screen:
+Charge Report
+
+Access:
+- Admin
+- Dev
+
+Shows:
+- rent charges
+- electricity charges
+- adjustment charges
+- voided charges
+
+--------------------------------------------------
+
+Screen:
+Review Flag Report
+
+Access:
+- Admin
+- Dev
+
+Shows:
+- pending count
+- reviewed count
+- dismissed count
+- grouped sensitive actions
+
+--------------------------------------------------
+
+Screen:
+Admin Correction Report
+
+Access:
+- Admin
+- Dev
+
+Shows:
+- correction count
+- financially sensitive correction count
+- grouped correction types
+
+==================================================
+25. ERROR AND VALIDATION UI
+==================================================
+
+Validation errors must be clear and close to the relevant field.
+
+Common validation examples:
+- required field missing
+- meter reading values do not match
+- payment amount must be positive
+- unit is not available
+- customer does not exist
+- rental cannot close early
+- confirmation required
+- reason required for Admin correction
+- Operator not authorized for action
+
+Locked record messages must explain that the record cannot be edited through normal Operator workflow.
+
+==================================================
+26. V1 OUT OF SCOPE UI
+==================================================
+
+The UI does not include:
+
+- customer-facing portal
+- online payment screen
+- receipt printing screen
+- tax workflow
+- accounting integration screen
+- phone-first layout
+- native mobile app
+- offline mode
+- photo upload
+- detached global notes dashboard for Operator
+- payment reversal screen
+- payment allocation screen
+- electricity rate table management screen
+- Operator charge override screen
+- Operator audit log access
+- Operator review flag access
+- Operator system settings access
+
+==================================================
+END OF DOCUMENT
+==================================================

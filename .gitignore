@@ -1,0 +1,19 @@
+# environment files
+.env
+.env.local
+.env.*.local
+backend/appsettings.Development.json
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
