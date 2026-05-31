@@ -17,4 +17,6 @@ public class AppDbContext : DbContext
     public DbSet<StorageUnit> StorageUnits => Set<StorageUnit>();
 
     public DbSet<Rental> Rentals => Set<Rental>();
+
+    public DbSet<BillingPeriod> BillingPeriods => Set<BillingPeriod>();
 }
