@@ -29,4 +29,6 @@ public class AppDbContext : DbContext
     public DbSet<DepositTransaction> DepositTransactions => Set<DepositTransaction>();
     
     public DbSet<Note> Notes => Set<Note>();
+
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 }
