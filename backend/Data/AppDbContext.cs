@@ -35,4 +35,6 @@ public class AppDbContext : DbContext
     public DbSet<ReviewFlag> ReviewFlags => Set<ReviewFlag>();
     
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+   
+    public DbSet<AdminCorrection> AdminCorrections => Set<AdminCorrection>();
 }
