@@ -19,4 +19,6 @@ public class AppDbContext : DbContext
     public DbSet<Rental> Rentals => Set<Rental>();
 
     public DbSet<BillingPeriod> BillingPeriods => Set<BillingPeriod>();
+
+    public DbSet<Charge> Charges => Set<Charge>();
 }
