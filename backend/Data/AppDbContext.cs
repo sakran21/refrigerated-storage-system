@@ -11,4 +11,6 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Account> Accounts => Set<Account>();
+
+    public DbSet<Customer> Customers => Set<Customer>();
 }
