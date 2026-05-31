@@ -27,4 +27,6 @@ public class AppDbContext : DbContext
     public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
 
     public DbSet<DepositTransaction> DepositTransactions => Set<DepositTransaction>();
+    
+    public DbSet<Note> Notes => Set<Note>();
 }
