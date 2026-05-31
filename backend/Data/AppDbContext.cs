@@ -31,4 +31,6 @@ public class AppDbContext : DbContext
     public DbSet<Note> Notes => Set<Note>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    
+    public DbSet<ReviewFlag> ReviewFlags => Set<ReviewFlag>();
 }
