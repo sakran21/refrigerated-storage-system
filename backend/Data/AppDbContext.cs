@@ -33,4 +33,6 @@ public class AppDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     
     public DbSet<ReviewFlag> ReviewFlags => Set<ReviewFlag>();
+    
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 }
