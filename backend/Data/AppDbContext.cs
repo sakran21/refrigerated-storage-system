@@ -21,4 +21,6 @@ public class AppDbContext : DbContext
     public DbSet<BillingPeriod> BillingPeriods => Set<BillingPeriod>();
 
     public DbSet<Charge> Charges => Set<Charge>();
+
+    public DbSet<Payment> Payments => Set<Payment>();
 }
