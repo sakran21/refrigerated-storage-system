@@ -23,4 +23,6 @@ public class AppDbContext : DbContext
     public DbSet<Charge> Charges => Set<Charge>();
 
     public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
 }
