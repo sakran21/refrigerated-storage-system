@@ -106,4 +106,44 @@ public class CustomersController : ControllerBase
 
         return CreatedAtAction(nameof(GetCustomerById), new { id = customer.Id }, response);
     }
+
+// TODO: Restrict customer updates to Admin role after authentication/authorization is implemented.
+[HttpPut("{id}")]
+[ProducesResponseType(typeof(CustomerResponse), StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+public async Task<ActionResult<CustomerResponse>> UpdateCustomer(int id, UpdateCustomerRequest request)
+{
+    var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Id == id);
+
+    if (customer == null)
+    {
+        return NotFound();
+    }
+
+    customer.FullName = request.FullName;
+    customer.PhoneNumber = request.PhoneNumber;
+    customer.IdType = request.IdType;
+    customer.IdNumber = request.IdNumber;
+    customer.EmergencyContactName = request.EmergencyContactName;
+    customer.EmergencyContactPhone = request.EmergencyContactPhone;
+    customer.UpdatedAt = DateTime.UtcNow;
+
+    await _db.SaveChangesAsync();
+
+    var response = new CustomerResponse
+    {
+        Id = customer.Id,
+        FullName = customer.FullName,
+        PhoneNumber = customer.PhoneNumber,
+        IdType = customer.IdType,
+        IdNumber = customer.IdNumber,
+        EmergencyContactName = customer.EmergencyContactName,
+        EmergencyContactPhone = customer.EmergencyContactPhone,
+        CreatedAt = customer.CreatedAt,
+        UpdatedAt = customer.UpdatedAt
+    };
+
+    return Ok(response);
+}
 }
