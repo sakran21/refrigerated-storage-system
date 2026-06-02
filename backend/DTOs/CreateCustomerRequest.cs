@@ -9,7 +9,7 @@ public class CreateCustomerRequest
     public string FullName { get; set; } = string.Empty;
 
     [Required]
-    [MaxLength(50)]
+    [MaxLength(30)]
     public string PhoneNumber { get; set; } = string.Empty;
 
     [Required]
