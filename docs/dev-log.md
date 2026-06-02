@@ -1,0 +1,1 @@
+- Added Customers API checkpoint and verified endpoints.
