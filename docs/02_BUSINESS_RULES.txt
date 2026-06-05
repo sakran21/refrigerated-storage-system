@@ -231,6 +231,27 @@ Creating a rental requires:
 - deposit amount, which may be zero
 - initial meter reading
 
+BR-053A
+A rental cannot become Active until the first billing period's rent has been received in full.
+
+At rental creation, the system must record:
+
+* the first billing period
+* the first-month rent charge
+* a cash payment equal to the first-month rent charge
+* the initial meter reading
+
+The rental, billing period, rent charge, payment, initial meter reading, and storage unit status change must be saved as one operation.
+
+BR-053B
+If a nonzero deposit amount is agreed for a rental, the full deposit must be collected before the rental becomes Active.
+
+At rental creation:
+- a deposit amount of zero means no deposit is required
+- a nonzero deposit amount means the deposit was collected in full
+- the collected deposit must be recorded as a DepositTransaction
+- deposit funds must not be recorded as a Payment and must not reduce the rental's outstanding balance
+
 BR-054
 Rental start date becomes the billing anchor date.
 

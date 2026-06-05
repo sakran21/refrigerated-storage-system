@@ -153,6 +153,47 @@ public class RentalsController : ControllerBase
             UpdatedAt = now
         };
 
+        var rentCharge = new Charge
+        {
+            Rental = rental,
+            BillingPeriod = billingPeriod,
+            ChargeType = "rent",
+            Amount = request.MonthlyRentAmount,
+            Status = "paid",
+            IsOverridden = false,
+            ElectricityRateSnapshot = null,
+            Locked = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        var firstRentPayment = new Payment
+        {
+            Rental = rental,
+            Amount = request.MonthlyRentAmount,
+            PaidAt = now,
+            Locked = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        DepositTransaction? depositTransaction = null;
+
+        if (request.DepositAmount > 0)
+        {
+            depositTransaction = new DepositTransaction
+            {
+                Rental = rental,
+                TransactionType = "credit",
+                Amount = request.DepositAmount,
+                ChargeId = null,
+                TransactionDate = now,
+                Locked = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+        }
+
         var startingMeterReading = new MeterReading
         {
             Rental = rental,
@@ -171,7 +212,13 @@ public class RentalsController : ControllerBase
 
         _db.Rentals.Add(rental);
         _db.BillingPeriods.Add(billingPeriod);
+        _db.Charges.Add(rentCharge);
+        _db.Payments.Add(firstRentPayment);
         _db.MeterReadings.Add(startingMeterReading);
+        if (depositTransaction != null)
+        {
+            _db.DepositTransactions.Add(depositTransaction);
+        }
 
         await _db.SaveChangesAsync();
 
