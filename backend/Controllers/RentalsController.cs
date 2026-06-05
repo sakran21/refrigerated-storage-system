@@ -78,50 +78,101 @@ public class RentalsController : ControllerBase
     [ProducesResponseType(typeof(RentalResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<RentalResponse>> CreateRental(CreateRentalRequest request)
     {
-        var customerExists = await _db.Customers.AnyAsync(c => c.Id == request.CustomerId);
+        if (request.StartDate == default)
+        {
+            return BadRequest("Start date is required.");
+        }
+
+        var customerExists = await _db.Customers
+            .AnyAsync(c => c.Id == request.CustomerId);
 
         if (!customerExists)
         {
             return NotFound("Customer not found.");
         }
 
-        var storageUnit = await _db.StorageUnits.FirstOrDefaultAsync(s => s.Id == request.StorageUnitId);
+        var storageUnit = await _db.StorageUnits
+            .FirstOrDefaultAsync(s => s.Id == request.StorageUnitId);
 
         if (storageUnit == null)
         {
             return NotFound("Storage unit not found.");
         }
 
+        var activeRentalExists = await _db.Rentals.AnyAsync(r =>
+            r.StorageUnitId == request.StorageUnitId &&
+            r.Status == "active" &&
+            r.EndDate == null);
+
+        if (activeRentalExists)
+        {
+            return Conflict("Storage unit already has an active rental.");
+        }
+
         if (!storageUnit.IsActive)
         {
-            return BadRequest("Storage unit is inactive.");
+            return Conflict("Storage unit is inactive.");
         }
 
-        if (storageUnit.Status != "available")
+        if (!string.Equals(
+            storageUnit.Status,
+            "available",
+            StringComparison.OrdinalIgnoreCase))
         {
-            return BadRequest("Storage unit is not available.");
+            return Conflict("Storage unit is not available.");
         }
 
-            var rental = new Rental
-            {
-                CustomerId = request.CustomerId,
-                StorageUnitId = request.StorageUnitId,
-                Status = "active",
-                StartDate = request.StartDate,
-                EndDate = null,
-                MonthlyRentAmount = request.MonthlyRentAmount,
-                DepositAmount = request.DepositAmount,
-                IsDelinquent = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+        var now = DateTime.UtcNow;
+        var periodEndDate = request.StartDate.AddMonths(1);
+
+        var rental = new Rental
+        {
+            CustomerId = request.CustomerId,
+            StorageUnitId = request.StorageUnitId,
+            Status = "active",
+            StartDate = request.StartDate,
+            EndDate = null,
+            MonthlyRentAmount = request.MonthlyRentAmount,
+            DepositAmount = request.DepositAmount,
+            IsDelinquent = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        var billingPeriod = new BillingPeriod
+        {
+            Rental = rental,
+            PeriodStartDate = request.StartDate,
+            PeriodEndDate = periodEndDate,
+            DueDate = periodEndDate,
+            Status = "open",
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        var startingMeterReading = new MeterReading
+        {
+            Rental = rental,
+            BillingPeriod = billingPeriod,
+            StorageUnit = storageUnit,
+            ReadingValue = request.StartingMeterReadingValue,
+            ReadingType = "start",
+            Locked = true,
+            ReadAt = request.StartDate,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
 
         storageUnit.Status = "rented";
-        storageUnit.UpdatedAt = DateTime.UtcNow;
+        storageUnit.UpdatedAt = now;
 
         _db.Rentals.Add(rental);
+        _db.BillingPeriods.Add(billingPeriod);
+        _db.MeterReadings.Add(startingMeterReading);
+
         await _db.SaveChangesAsync();
 
         var response = new RentalResponse
@@ -139,6 +190,9 @@ public class RentalsController : ControllerBase
             UpdatedAt = rental.UpdatedAt
         };
 
-        return CreatedAtAction(nameof(GetRentalById), new { id = rental.Id }, response);
+        return CreatedAtAction(
+            nameof(GetRentalById),
+            new { id = rental.Id },
+            response);
     }
 }
