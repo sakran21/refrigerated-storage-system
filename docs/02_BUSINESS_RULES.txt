@@ -445,6 +445,17 @@ Balance is calculated at rental level:
 
 total charges - total payments - applied deposit = outstanding balance
 
+BR-107A
+Overpayments are allowed in v1.
+
+If total payments exceed total charges minus applied deposit, the rental's outstanding balance becomes negative.
+
+A negative outstanding balance represents customer credit on that rental.
+
+Payment credit is not the same as deposit credit. Payment credit comes from excess cash payments. Deposit credit comes from refundable security deposit handling.
+
+Credit handling at rental closure must be reviewed before final settlement. Deposit refund workflow remains outside default v1 scope.
+
 BR-108
 Payments are final after creation.
 

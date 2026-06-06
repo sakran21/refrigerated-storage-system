@@ -340,6 +340,9 @@ public class RentalsController : ControllerBase
             return BadRequest("Rental is already closed.");
         }
 
+        var now = DateTime.UtcNow;
+
+
         if (request.EndDate == default)
         {
             return BadRequest("End date is required.");
@@ -405,9 +408,14 @@ public class RentalsController : ControllerBase
         {
             return Conflict("Electricity rate cannot be negative.");
         }
-        var now = DateTime.UtcNow;
+        
         var electricityUsage = request.FinalMeterReadingValue - latestMeterReading.ReadingValue;
         var electricityChargeAmount = electricityUsage * electricityRate;
+
+        if (request.EndDate > now)
+        {
+            return BadRequest("End date cannot be in the future.");
+        }
 
         var finalMeterReading = new MeterReading
         {

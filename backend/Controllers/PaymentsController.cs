@@ -76,15 +76,27 @@ public class PaymentsController : ControllerBase
             return BadRequest("Payment date is required.");
         }
 
-        var rentalExists = await _db.Rentals
-            .AnyAsync(r => r.Id == request.RentalId);
+        var rental = await _db.Rentals
+            .FirstOrDefaultAsync(rental => rental.Id == request.RentalId);
 
-        if (!rentalExists)
+        if (rental == null)
         {
             return NotFound("Rental not found.");
         }
 
         var now = DateTime.UtcNow;
+
+        if (request.PaidAt > now)
+        {
+            return BadRequest("Payment date cannot be in the future.");
+        }
+
+        
+        if (request.PaidAt<rental.StartDate)
+        {
+            return BadRequest("Payment date cannot be before the rental start date.");
+        }
+
 
         var payment = new Payment
         {
