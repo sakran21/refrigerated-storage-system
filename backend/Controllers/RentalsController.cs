@@ -75,6 +75,48 @@ public class RentalsController : ControllerBase
         return Ok(rental);
     }
 
+    [HttpGet("{id}/balance")]
+    [ProducesResponseType(typeof(RentalBalanceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RentalBalanceResponse>> GetRentalBalance(int id)
+    {
+        var rentalExists = await _db.Rentals.AnyAsync(r => r.Id ==id);
+
+        if (!rentalExists)
+        {
+            return NotFound("Rental not found.");
+        }
+
+        var totalCharges = await _db.Charges
+            .Where(c => c.RentalId == id)
+            .SumAsync(c => (decimal?)c.Amount) ?? 0;
+
+        var totalPayments = await _db.Payments
+            .Where(p => p.RentalId == id)
+            .SumAsync(p => (decimal?)p.Amount) ?? 0;
+
+        var appliedDeposit = await _db.DepositTransactions
+            .Where(d =>
+                d.RentalId == id &&
+                d.TransactionType == "applied")
+            .SumAsync(d => (decimal?)d.Amount) ?? 0;
+
+        var outstandingBalance = totalCharges - totalPayments - appliedDeposit;
+
+        var response = new RentalBalanceResponse
+        {
+            RentalId = id,
+            TotalCharges = totalCharges,
+            TotalPayments = totalPayments,
+            AppliedDeposit = appliedDeposit,
+            OutstandingBalance = outstandingBalance
+        };
+
+        return Ok(response);
+    }
+
+
+
     [HttpPost]
     [ProducesResponseType(typeof(RentalResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
