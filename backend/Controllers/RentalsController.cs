@@ -3,6 +3,7 @@ using backend.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Entities;
+using System.Globalization;
 
 namespace backend.Controllers;
 
@@ -241,5 +242,159 @@ public class RentalsController : ControllerBase
             nameof(GetRentalById),
             new { id = rental.Id },
             response);
+    }
+
+    [HttpPost("{id}/close")]
+    [ProducesResponseType(typeof(RentalResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<RentalResponse>> CloseRental(
+        int id,
+        CloseRentalRequest request)
+    {
+        var rental = await _db.Rentals
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (rental == null)
+        {
+            return NotFound("Rental not found.");
+        }
+
+        if (rental.Status == "closed")
+        {
+            return BadRequest("Rental is already closed.");
+        }
+
+        if (request.EndDate == default)
+        {
+            return BadRequest("End date is required.");
+        }
+
+        if (request.EndDate < rental.StartDate)
+        {
+            return BadRequest("End date cannot be before the rental start date.");
+        }
+
+        var storageUnit = await _db.StorageUnits
+            .FirstOrDefaultAsync(s => s.Id == rental.StorageUnitId);
+
+        if (storageUnit == null)
+        {
+            return Conflict("Rental storage unit could not be found.");
+        }
+
+        var billingPeriod = await _db.BillingPeriods
+            .FirstOrDefaultAsync(b =>
+                b.RentalId == rental.Id &&
+                b.Status == "open");
+
+        if (billingPeriod == null)
+        {
+            return Conflict("Rental does not have an open billing period.");
+        }
+
+        var latestMeterReading = await _db.MeterReadings
+            .Where(m => m.RentalId == rental.Id)
+            .OrderByDescending(m => m.ReadAt)
+            .FirstOrDefaultAsync();
+
+        if (latestMeterReading == null)
+        {
+            return Conflict("Rental does not have a previous meter reading.");
+        }
+
+        if (request.FinalMeterReadingValue < latestMeterReading.ReadingValue)
+        {
+            return BadRequest("Final meter reading cannot be lower than the previous reading.");
+        }
+
+        var electricityRateSetting = await _db.SystemSettings
+            .FirstOrDefaultAsync(s =>
+                s.SettingKey == "electricity_rate_per_unit");
+
+        if (electricityRateSetting == null)
+        {
+            return Conflict("Electricity rate setting could not be found.");
+        }
+
+        if (!decimal.TryParse(
+            electricityRateSetting.SettingValue,
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out var electricityRate))
+        {
+            return Conflict("Electricity rate setting is invalid.");
+        }
+
+        if (electricityRate < 0)
+        {
+            return Conflict("Electricity rate cannot be negative.");
+        }
+        var now = DateTime.UtcNow;
+        var electricityUsage = request.FinalMeterReadingValue - latestMeterReading.ReadingValue;
+        var electricityChargeAmount = electricityUsage * electricityRate;
+
+        var finalMeterReading = new MeterReading
+        {
+            Rental = rental,
+            BillingPeriod = billingPeriod,
+            StorageUnit = storageUnit,
+            ReadingValue = request.FinalMeterReadingValue,
+            ReadingType = "closure",
+            Locked = true,
+            ReadAt = request.EndDate,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        var electricityCharge = new Charge
+        {
+            Rental = rental,
+            BillingPeriod = billingPeriod,
+            ChargeType = "electricity",
+            Amount = electricityChargeAmount,
+            Status = electricityChargeAmount == 0 ? "paid" : "open",
+            IsOverridden = false,
+            ElectricityRateSnapshot = electricityRate,
+            Locked = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        rental.Status = "closed";
+        rental.EndDate = request.EndDate;
+        rental.UpdatedAt = now;
+
+        billingPeriod.Status = "closed";
+        billingPeriod.PeriodEndDate = request.EndDate;
+        billingPeriod.UpdatedAt = now;
+
+        storageUnit.Status = "available";
+        storageUnit.UpdatedAt = now;
+
+        _db.MeterReadings.Add(finalMeterReading);
+        _db.Charges.Add(electricityCharge);
+
+        await _db.SaveChangesAsync();
+
+
+
+        var response = new RentalResponse
+        {
+            Id = rental.Id,
+            CustomerId = rental.CustomerId,
+            StorageUnitId = rental.StorageUnitId,
+            Status = rental.Status,
+            StartDate = rental.StartDate,
+            EndDate = rental.EndDate,
+            MonthlyRentAmount = rental.MonthlyRentAmount,
+            DepositAmount = rental.DepositAmount,
+            IsDelinquent = rental.IsDelinquent,
+            CreatedAt = rental.CreatedAt,
+            UpdatedAt = rental.UpdatedAt
+        };
+
+        return Ok(response);
     }
 }
