@@ -38,6 +38,34 @@ public class StorageUnitsController : ControllerBase
 
         return Ok(storageUnits);
     }
+    
+
+    [HttpGet("available")]
+    [ProducesResponseType(typeof(List<StorageUnitResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<StorageUnitResponse>>> GetAvailableStorageUnits()
+    {
+        var storageUnits = await _db.StorageUnits
+            .Where(storageUnit =>
+                storageUnit.IsActive &&
+                storageUnit.Status == "available")
+            .OrderBy(storageUnit => storageUnit.UnitCode)
+            .Select(storageUnit => new StorageUnitResponse
+            {
+                Id = storageUnit.Id,
+                UnitCode = storageUnit.UnitCode,
+                Category = storageUnit.Category,
+                Status = storageUnit.Status,
+                MonthlyRentAmount = storageUnit.MonthlyRentAmount,
+                IsActive = storageUnit.IsActive,
+                CreatedAt = storageUnit.CreatedAt,
+                UpdatedAt = storageUnit.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(storageUnits);
+    }
+
+
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(StorageUnitResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
