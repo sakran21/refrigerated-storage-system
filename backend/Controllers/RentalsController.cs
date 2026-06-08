@@ -184,6 +184,40 @@ public class RentalsController : ControllerBase
         return Ok(charges);
     }
 
+    [HttpGet("{id}/meter-readings")]
+    [ProducesResponseType(typeof(List<MeterReadingResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<MeterReadingResponse>>> GetRentalMeterReadings(int id)
+    {
+        var rentalExists = await _db.Rentals.AnyAsync(rental => rental.Id == id);
+
+        if (!rentalExists)
+        {
+            return NotFound("Rental not found.");
+        }
+
+        var meterReadings = await _db.MeterReadings
+            .Where(meterReading => meterReading.RentalId == id)
+            .OrderBy(meterReading => meterReading.ReadAt)
+            .ThenBy(meterReading => meterReading.Id)
+            .Select(meterReading => new MeterReadingResponse
+            {
+                Id = meterReading.Id,
+                RentalId = meterReading.RentalId,
+                BillingPeriodId = meterReading.BillingPeriodId,
+                StorageUnitId = meterReading.StorageUnitId,
+                ReadingValue = meterReading.ReadingValue,
+                ReadingType = meterReading.ReadingType,
+                Locked = meterReading.Locked,
+                ReadAt = meterReading.ReadAt,
+                CreatedAt = meterReading.CreatedAt,
+                UpdatedAt = meterReading.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(meterReadings);
+    }
+
 
 
 
