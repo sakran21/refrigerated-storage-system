@@ -218,6 +218,38 @@ public class RentalsController : ControllerBase
         return Ok(meterReadings);
     }
 
+    [HttpGet("{id}/billing-periods")]
+    [ProducesResponseType(typeof(List<BillingPeriodResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<BillingPeriodResponse>>> GetRentalBillingPeriods(int id)
+    {
+        var rentalExists = await _db.Rentals.AnyAsync(rental => rental.Id == id);
+
+        if (!rentalExists)
+        {
+            return NotFound("Rental not found.");
+        }
+
+        var billingPeriods = await _db.BillingPeriods
+            .Where(period => period.RentalId == id)
+            .OrderBy(period => period.PeriodStartDate)
+            .ThenBy(period => period.Id)
+            .Select(period => new BillingPeriodResponse
+            {
+                Id = period.Id,
+                RentalId = period.RentalId,
+                PeriodStartDate = period.PeriodStartDate,
+                PeriodEndDate = period.PeriodEndDate,
+                DueDate = period.DueDate,
+                Status = period.Status,
+                CreatedAt = period.CreatedAt,
+                UpdatedAt = period.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(billingPeriods);
+    }
+
 
 
 
