@@ -148,6 +148,45 @@ public class RentalsController : ControllerBase
         return Ok(payments);
     }
 
+    [HttpGet("{id}/charges")]
+    [ProducesResponseType(typeof(List<ChargeResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<ChargeResponse>>> GetRentalCharges(int id)
+    {
+        var rentalExists = await _db.Rentals.AnyAsync(rental => rental.Id == id);
+
+        if (!rentalExists)
+        {
+            return NotFound("Rental not found.");
+        }
+
+        var charges = await _db.Charges
+            
+            .Where(charge => charge.RentalId == id)
+            .OrderBy(charge => charge.CreatedAt)
+            .ThenBy(charge => charge.Id)
+            .Select(charge => new ChargeResponse
+            {
+                Id = charge.Id,
+                RentalId = charge.RentalId,
+                BillingPeriodId = charge.BillingPeriodId,
+                ChargeType = charge.ChargeType,
+                Amount = charge.Amount,
+                Status = charge.Status,
+                IsOverridden = charge.IsOverridden,
+                ElectricityRateSnapshot = charge.ElectricityRateSnapshot,
+                Locked = charge.Locked,
+                CreatedAt = charge.CreatedAt,
+                UpdatedAt = charge.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(charges);
+    }
+
+
+
+
     [HttpGet("{id}/deposits")]
     [ProducesResponseType(typeof(List<DepositTransactionResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
