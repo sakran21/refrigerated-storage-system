@@ -43,6 +43,35 @@ public class RentalsController : ControllerBase
         return Ok(rentals);
     }
 
+    [HttpGet("active")]
+    [ProducesResponseType(typeof(List<RentalResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<RentalResponse>>> GetActiveRentals()
+    {
+        var rentals = await _db.Rentals
+            .Where(rental =>
+                rental.Status == "active" &&
+                rental.EndDate == null)
+            .OrderBy(rental => rental.StartDate)
+            .ThenBy(rental => rental.Id)
+            .Select(rental => new RentalResponse
+            {
+                Id = rental.Id,
+                CustomerId = rental.CustomerId,
+                StorageUnitId = rental.StorageUnitId,
+                Status = rental.Status,
+                StartDate = rental.StartDate,
+                EndDate = rental.EndDate,
+                MonthlyRentAmount = rental.MonthlyRentAmount,
+                DepositAmount = rental.DepositAmount,
+                IsDelinquent = rental.IsDelinquent,
+                CreatedAt = rental.CreatedAt,
+                UpdatedAt = rental.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(rentals);
+    }
+
 
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(RentalResponse), StatusCodes.Status200OK)]
