@@ -32,3 +32,20 @@ Maintenance-related activity should be considered suspicious when:
 * maintenance is reversed quickly without explanation
 
 This concern should be addressed before the system is considered operationally safe for real business use.
+
+## 2026-06-11 - Frontend preparation
+
+Reviewed HTML fundamentals needed before implementing the React frontend.
+
+Covered:
+
+- HTML document structure
+- semantic layout elements
+- headings and content hierarchy
+- links
+- forms, labels, inputs, and buttons
+- tables for structured data
+
+Reason:
+
+The first frontend screens will need customer forms, storage unit lists, rental records, and payment/payment history views.
