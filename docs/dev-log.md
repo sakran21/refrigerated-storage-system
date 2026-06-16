@@ -48,4 +48,4 @@ Covered:
 
 Reason:
 
-The first frontend screens will need customer forms, storage unit lists, rental records, and payment/payment history views.
+The first frontend screens will need customer forms, storage unit lists, rental records, and payment/payment history views.- Continued frontend/CSS learning checkpoint from laptop.
