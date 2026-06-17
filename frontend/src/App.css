@@ -18,9 +18,48 @@ h1 {
 
 .dashboard-section h2 {
   font-size: 22px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .dashboard-section p {
   font-size: 16px;
+}
+
+.customer-form {
+  border: 1px solid #ddd;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.customer-form label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.customer-form input {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #aaa;
+}
+
+.customer-form button {
+  padding: 10px 16px;
+  border: 1px solid #333;
+  cursor: pointer;
+}
+
+.customer-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.customer-table th,
+.customer-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
 }

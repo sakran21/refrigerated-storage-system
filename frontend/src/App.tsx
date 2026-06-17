@@ -6,8 +6,49 @@ function App() {
       <h1>Refrigerated Storage Rental System</h1>
 
       <section className="dashboard-section">
+        <h2>Customer Intake</h2>
+
+        <form className="customer-form">
+          <label>
+            Full Name
+            <input type="text" placeholder="Customer full name" />
+          </label>
+
+          <label>
+            Phone
+            <input type="tel" placeholder="Customer phone number" />
+          </label>
+
+          <label>
+            ID Number
+            <input type="text" placeholder="ID number" />
+          </label>
+
+          <button type="button">Save Customer</button>
+        </form>
+      </section>
+
+      <section className="dashboard-section">
         <h2>Customers</h2>
-        <p>Customer records and contact information will appear here.</p>
+
+        <table className="customer-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>ID Number</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Example Customer</td>
+              <td>555-0100</td>
+              <td>ID-0001</td>
+              <td>Placeholder</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
 
       <section className="dashboard-section">
