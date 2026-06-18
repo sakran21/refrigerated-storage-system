@@ -1,5 +1,5 @@
 .app {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 40px auto;
   padding: 24px;
   font-family: Arial, sans-serif;
@@ -10,10 +10,17 @@ h1 {
   margin-bottom: 24px;
 }
 
+.dashboard-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .dashboard-section {
   border: 1px solid #ccc;
   padding: 16px;
   margin-bottom: 16px;
+  flex: 1 1 420px;
 }
 
 .dashboard-section h2 {
