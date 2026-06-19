@@ -30,27 +30,27 @@ function App() {
 
         <section className="dashboard-section">
           <h2>Customers</h2>
-
-          <table className="customer-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>ID Number</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Example Customer</td>
-                <td>555-0100</td>
-                <td>ID-0001</td>
-                <td>Placeholder</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="table-wrapper">
+            <table className="customer-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>ID Number</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Example Customer</td>
+                  <td>555-0100</td>
+                  <td>ID-0001</td>
+                  <td>Placeholder</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
-
         <section className="dashboard-section">
           <h2>Storage Units</h2>
           <p>Unit availability, rental status, and maintenance status will appear here.</p>
