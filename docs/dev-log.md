@@ -49,3 +49,9 @@ Covered:
 Reason:
 
 The first frontend screens will need customer forms, storage unit lists, rental records, and payment/payment history views.- Continued frontend/CSS learning checkpoint from laptop.
+
+## Laptop Environment Checkpoint
+
+- Verified project repository access from macOS laptop.
+- Confirmed laptop can pull latest project changes from remote.
+- Used laptop environment for lightweight documentation/project continuity update.
