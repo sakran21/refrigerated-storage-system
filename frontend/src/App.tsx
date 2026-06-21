@@ -4,6 +4,22 @@ function App() {
   return (
     <main className="app">
       <h1>Refrigerated Storage Rental System</h1>
+      <section className="summary-cards">
+          <article className="summary-card">
+            <h2>Available Units</h2>
+            <p>Placeholder count</p>
+          </article>
+
+          <article className="summary-card">
+            <h2>Active Rentals</h2>
+            <p>Placeholder count</p>
+          </article>
+
+          <article className="summary-card">
+            <h2>Delinquent Rentals</h2>
+            <p>Placeholder count</p>
+          </article>
+      </section>
       <div className="dashboard-grid">
         <section className="dashboard-section">
           <h2>Customer Intake</h2>
