@@ -1,5 +1,22 @@
 import './App.css'
 
+const customers = [
+  {
+    id: 1,
+    fullName: 'Example Customer',
+    phone: '555-0100',
+    idNumber: 'ID-0001',
+    status: 'Placeholder',
+  },
+  {
+    id: 2,
+    fullName: 'Second Customer',
+    phone: '555-0101',
+    idNumber: 'ID-0002',
+    status: 'Placeholder',
+  },
+]
+
 function App() {
   return (
     <main className="app">
@@ -56,14 +73,16 @@ function App() {
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>Example Customer</td>
-                  <td>555-0100</td>
-                  <td>ID-0001</td>
-                  <td>Placeholder</td>
-                </tr>
-              </tbody>
+                <tbody>
+                  {customers.map((customer) => (
+                    <tr key={customer.id}>
+                      <td>{customer.fullName}</td>
+                      <td>{customer.phone}</td>
+                      <td>{customer.idNumber}</td>
+                      <td>{customer.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
             </table>
           </div>
         </section>
