@@ -17,6 +17,27 @@ const customers = [
   },
 ]
 
+const storageUnits = [
+  {
+    id: 1,
+    unitNumber: 'A-01',
+    status: 'Available',
+    monthlyRent: 250,
+  },
+  {
+    id: 2,
+    unitNumber: 'A-02',
+    status: 'Rented',
+    monthlyRent: 250,
+  },
+  {
+    id: 3,
+    unitNumber: 'B-01',
+    status: 'Maintenance',
+    monthlyRent: 300,
+  },
+]
+
 function App() {
   return (
     <main className="app">
@@ -88,7 +109,24 @@ function App() {
         </section>
         <section className="dashboard-section">
           <h2>Storage Units</h2>
-          <p>Unit availability, rental status, and maintenance status will appear here.</p>
+          <table className="customer-table">
+            <thead>
+              <tr>
+                <th>Unit</th>
+                <th>Status</th>
+                <th>Monthly Rent</th>
+              </tr>
+            </thead>
+            <tbody>
+              {storageUnits.map((unit) => (
+                <tr key={unit.id}>
+                  <td>{unit.unitNumber}</td>
+                  <td>{unit.status}</td>
+                  <td>${unit.monthlyRent}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
 
         <section className="dashboard-section">
