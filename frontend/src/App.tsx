@@ -109,24 +109,26 @@ function App() {
         </section>
         <section className="dashboard-section">
           <h2>Storage Units</h2>
-          <table className="customer-table">
-            <thead>
-              <tr>
-                <th>Unit</th>
-                <th>Status</th>
-                <th>Monthly Rent</th>
-              </tr>
-            </thead>
-            <tbody>
-              {storageUnits.map((unit) => (
-                <tr key={unit.id}>
-                  <td>{unit.unitNumber}</td>
-                  <td>{unit.status}</td>
-                  <td>${unit.monthlyRent}</td>
+          <div className="table-wrapper">
+            <table className="customer-table">
+              <thead>
+                <tr>
+                  <th>Unit</th>
+                  <th>Status</th>
+                  <th>Monthly Rent</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {storageUnits.map((unit) => (
+                  <tr key={unit.id}>
+                    <td>{unit.unitNumber}</td>
+                    <td>{unit.status}</td>
+                    <td>${unit.monthlyRent}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="dashboard-section">
