@@ -19,3 +19,6 @@ The first frontend milestone for the refrigerated storage system is:
 React frontend fetches customer data from the ASP.NET Core API and renders it on screen.
 
 This proves the frontend and backend can communicate before building full workflows.
+
+
+Laptop checkpoint
