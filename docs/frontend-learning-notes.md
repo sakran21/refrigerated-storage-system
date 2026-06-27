@@ -22,3 +22,12 @@ This proves the frontend and backend can communicate before building full workfl
 
 
 Laptop checkpoint
+## Static Frontend Checkpoint
+
+Added frontend planning notes for the next static UI milestone.
+
+Current target:
+- render customer data in a readable static layout
+- render storage unit data in a readable static layout
+- keep the first frontend pass simple before wiring API calls
+- use static data first to separate layout problems from backend integration problems
