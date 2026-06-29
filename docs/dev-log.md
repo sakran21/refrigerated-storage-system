@@ -55,3 +55,9 @@ The first frontend screens will need customer forms, storage unit lists, rental 
 - Verified project repository access from macOS laptop.
 - Confirmed laptop can pull latest project changes from remote.
 - Used laptop environment for lightweight documentation/project continuity update.
+
+## Laptop Workflow Note
+
+- Used macOS laptop to make a small documentation-only commit.
+- Kept the change limited to project notes to avoid touching backend or frontend code from the laptop environment.
+- Confirmed the laptop workflow remains usable for quick GitHub activity and project continuity.
