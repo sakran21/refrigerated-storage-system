@@ -1,3 +1,5 @@
+import './App.css'
+
 type Customer = {
   id: number;
   fullName: string;
