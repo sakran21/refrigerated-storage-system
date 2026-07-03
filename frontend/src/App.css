@@ -144,3 +144,10 @@ body {
   font: inherit;
   cursor: pointer;
 }
+
+
+.form-error {
+  margin: 0;
+  color: #b42318;
+  font-weight: bold;
+}

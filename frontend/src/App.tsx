@@ -38,21 +38,30 @@ function App() {
   const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [idType, setIdType] = useState('')
+  const [formError, setFormError] = useState('')
 
-function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {    event.preventDefault()
-    const newCustomer: Customer = {
-      id: customers.length + 1,
-      fullName,
-      phoneNumber,
-      idType,
-      activeRentals: 0,
-    }
+function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
+  event.preventDefault()
 
-    setCustomers([...customers, newCustomer])
-    setFullName('')
-    setPhoneNumber('')
-    setIdType('')
+  if (!fullName.trim() || !phoneNumber.trim() || !idType.trim()) {
+    setFormError('Full name, phone number, and ID type are required.')
+    return
   }
+
+  const newCustomer: Customer = {
+    id: customers.length + 1,
+    fullName: fullName.trim(),
+    phoneNumber: phoneNumber.trim(),
+    idType: idType.trim(),
+    activeRentals: 0,
+  }
+
+  setCustomers([...customers, newCustomer])
+  setFullName('')
+  setPhoneNumber('')
+  setIdType('')
+  setFormError('')
+}
 
   return (
     <main className="app-shell">
@@ -94,7 +103,7 @@ function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {    event.p
               onChange={(event) => setIdType(event.target.value)}
             />
           </label>
-
+          {formError && <p className="form-error">{formError}</p>}
           <button type="submit">Add Customer</button>
         </form>
       </section>
