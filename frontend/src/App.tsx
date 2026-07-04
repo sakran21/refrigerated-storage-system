@@ -6,7 +6,11 @@ type Customer = {
   fullName: string
   phoneNumber: string
   idType: string
-  activeRentals: number
+  idNumber: string
+  emergencyContactName: string
+  emergencyContactPhone: string
+  createdAt: string
+  updatedAt: string
 }
 
 const initialCustomers: Customer[] = [
@@ -15,21 +19,33 @@ const initialCustomers: Customer[] = [
     fullName: 'Sample Customer One',
     phoneNumber: '555-0101',
     idType: 'Driver License',
-    activeRentals: 1,
+    idNumber: 'DL-001',
+    emergencyContactName: 'Sample Contact One',
+    emergencyContactPhone: '555-0201',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
   },
   {
     id: 2,
     fullName: 'Sample Customer Two',
     phoneNumber: '555-0102',
     idType: 'Passport',
-    activeRentals: 0,
+    idNumber: 'P-002',
+    emergencyContactName: 'Sample Contact Two',
+    emergencyContactPhone: '555-0202',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
   },
   {
     id: 3,
     fullName: 'Sample Customer Three',
     phoneNumber: '555-0103',
     idType: 'State ID',
-    activeRentals: 2,
+    idNumber: 'SID-003',
+    emergencyContactName: 'Sample Contact Three',
+    emergencyContactPhone: '555-0203',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
   },
 ]
 
@@ -53,7 +69,11 @@ function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     fullName: fullName.trim(),
     phoneNumber: phoneNumber.trim(),
     idType: idType.trim(),
-    activeRentals: 0,
+    idNumber: 'Pending',
+    emergencyContactName: 'Pending',
+    emergencyContactPhone: 'Pending',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   }
 
   setCustomers([...customers, newCustomer])
@@ -123,8 +143,13 @@ function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
               </div>
 
               <div>
-                <dt>Active Rentals</dt>
-                <dd>{customer.activeRentals}</dd>
+                <dt>ID Number</dt>
+                <dd>{customer.idNumber}</dd>
+              </div>
+
+              <div>
+                <dt>Emergency Contact</dt>
+                <dd>{customer.emergencyContactName}</dd>
               </div>
             </dl>
           </article>
