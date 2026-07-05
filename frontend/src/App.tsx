@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 type Customer = {
@@ -55,6 +55,17 @@ function App() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [idType, setIdType] = useState('')
   const [formError, setFormError] = useState('')
+
+  useEffect(() => {
+  async function loadCustomers() {
+    const response = await fetch('http://localhost:5183/api/customers')
+    const data: Customer[] = await response.json()
+
+    setCustomers(data)
+  }
+
+  loadCustomers()
+  }, [])
 
 function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
   event.preventDefault()
