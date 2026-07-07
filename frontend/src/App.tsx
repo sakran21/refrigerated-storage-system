@@ -13,6 +13,15 @@ type Customer = {
   updatedAt: string
 }
 
+
+type StorageUnit = {
+  id: number;
+  unitNumber: string;
+  sizeCategory: string;
+  status: "Available" | "Rented" | "Maintenance";
+  currentCustomer?: string;
+};
+
 const initialCustomers: Customer[] = [
   {
     id: 1,
@@ -48,6 +57,28 @@ const initialCustomers: Customer[] = [
     updatedAt: '2026-01-01T00:00:00Z',
   },
 ]
+
+const storageUnits: StorageUnit[] = [
+  {
+    id: 1,
+    unitNumber: "A-101",
+    sizeCategory: "Small",
+    status: "Available",
+  },
+  {
+    id: 2,
+    unitNumber: "B-204",
+    sizeCategory: "Medium",
+    status: "Rented",
+    currentCustomer: "Sample Customer One",
+  },
+  {
+    id: 3,
+    unitNumber: "C-301",
+    sizeCategory: "Large",
+    status: "Maintenance",
+  },
+];
 
 function App() {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers)
@@ -100,7 +131,8 @@ function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
         <p className="eyebrow">Refrigerated Storage System</p>
         <h1>Customers</h1>
         <p className="page-description">
-          Static customer list used to validate frontend layout before API integration.
+          Customer and storage unit interface used to validate frontend layout, form behavior,
+          and early API integration.
         </p>
       </section>
 
@@ -166,6 +198,33 @@ function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
           </article>
         ))}
       </section>
+      <section className="content-section">
+        <h2>Storage Units</h2>
+
+        <div className="card-list">
+          {storageUnits.map((unit) => (
+            <article className="info-card" key={unit.id}>
+              <div>
+                <h3>Unit {unit.unitNumber}</h3>
+                <p>{unit.sizeCategory}</p>
+              </div>
+
+              <dl>
+                <div>
+                  <dt>Status</dt>
+                  <dd>{unit.status}</dd>
+                </div>
+
+                <div>
+                  <dt>Customer</dt>
+                  <dd>{unit.currentCustomer ?? "None"}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      </section>
+      
     </main>
   )
 }
