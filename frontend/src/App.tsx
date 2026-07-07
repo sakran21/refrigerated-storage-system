@@ -14,6 +14,7 @@ type Customer = {
 }
 
 
+
 type StorageUnit = {
   id: number;
   unitNumber: string;
@@ -86,14 +87,30 @@ function App() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [idType, setIdType] = useState('')
   const [formError, setFormError] = useState('')
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true)
+  const [customerLoadError, setCustomerLoadError] = useState('')
 
   useEffect(() => {
   async function loadCustomers() {
-    const response = await fetch('http://localhost:5183/api/customers')
-    const data: Customer[] = await response.json()
+  try {
+        setIsLoadingCustomers(true)
+        setCustomerLoadError('')
 
-    setCustomers(data)
-  }
+        const response = await fetch('http://localhost:5183/api/customers')
+
+        if (!response.ok) {
+          throw new Error('Failed to load customers.')
+        }
+
+        const data: Customer[] = await response.json()
+        setCustomers(data)
+      } catch {
+        setCustomerLoadError('Unable to load customers from the API.')
+      } finally {
+        setIsLoadingCustomers(false)
+      }
+   }
+
 
   loadCustomers()
   }, [])
@@ -172,31 +189,37 @@ function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
       </section>
 
       <section className="customer-list" aria-label="Customer list">
-        {customers.map((customer) => (
-          <article className="customer-card" key={customer.id}>
-            <div>
-              <h2>{customer.fullName}</h2>
-              <p>{customer.phoneNumber}</p>
-            </div>
+        {isLoadingCustomers && <p>Loading customers...</p>}
 
-            <dl>
+        {customerLoadError && <p className="form-error">{customerLoadError}</p>}
+
+        {!isLoadingCustomers &&
+          !customerLoadError &&
+          customers.map((customer) => (
+            <article className="customer-card" key={customer.id}>
               <div>
-                <dt>ID Type</dt>
-                <dd>{customer.idType}</dd>
+                <h2>{customer.fullName}</h2>
+                <p>{customer.phoneNumber}</p>
               </div>
 
-              <div>
-                <dt>ID Number</dt>
-                <dd>{customer.idNumber}</dd>
-              </div>
+              <dl>
+                <div>
+                  <dt>ID Type</dt>
+                  <dd>{customer.idType}</dd>
+                </div>
 
-              <div>
-                <dt>Emergency Contact</dt>
-                <dd>{customer.emergencyContactName}</dd>
-              </div>
-            </dl>
-          </article>
-        ))}
+                <div>
+                  <dt>ID Number</dt>
+                  <dd>{customer.idNumber}</dd>
+                </div>
+
+                <div>
+                  <dt>Emergency Contact</dt>
+                  <dd>{customer.emergencyContactName}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
       </section>
       <section className="content-section">
         <h2>Storage Units</h2>
