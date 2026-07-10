@@ -96,7 +96,7 @@ function App() {
         setIsLoadingCustomers(true)
         setCustomerLoadError('')
 
-        const response = await fetch('http://localhost:5183/api/customers')
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/customers`)
 
         if (!response.ok) {
           throw new Error('Failed to load customers.')
